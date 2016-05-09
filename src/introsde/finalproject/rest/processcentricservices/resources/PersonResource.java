@@ -340,7 +340,7 @@ public class PersonResource {
 	}
 
 	/**
-	 * PUT /person/{idPerson}/checkGoal/{measureName} I Integration Logic:
+	 * PUT /person/{idPerson}/checkGoal/{measureName} II Integration Logic:
 	 * 
 	 * checkGoal(idPerson, inputGoalJSON, measureName) calls
 	 * <ul>
@@ -378,7 +378,7 @@ public class PersonResource {
 
 		Response response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
-		
+
 		if (response.getStatus() != 200) {
 			System.out
 					.println("Business Logic Service Error catch response.getStatus() != 200");
@@ -389,9 +389,9 @@ public class PersonResource {
 
 		String result = response.readEntity(String.class);
 		JSONObject obj = new JSONObject(result);
-		
+
 		JSONObject goalTarget = null;
-		
+
 		JSONObject goalsObj = (JSONObject) obj.get("goals");
 		JSONArray goalArr = goalsObj.getJSONArray("goal");
 
@@ -423,13 +423,14 @@ public class PersonResource {
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
 			}
-			
-			// GET PERSON/{IDPERSON} --> SS 
+
+			// GET PERSON/{IDPERSON} --> SS
 			path = "/person/" + idPerson;
 
 			service = client.target(storageServiceURL);
-			response = service.path(path).request().accept(mediaType).get(Response.class);
-			
+			response = service.path(path).request().accept(mediaType)
+					.get(Response.class);
+
 			if (response.getStatus() != 200) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 200");
@@ -437,29 +438,32 @@ public class PersonResource {
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
 			}
-			
+
 			result = response.readEntity(String.class);
 			obj = new JSONObject(result);
-			
+
 			JSONObject updatedGoalTarget = null;
 			goalsObj = (JSONObject) obj.get("goals");
 			goalArr = goalsObj.getJSONArray("goal");
 
 			for (int i = 0; i < goalArr.length(); i++) {
-				if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
+				if (goalArr.getJSONObject(i).getString("type")
+						.equals(measureName)) {
 					updatedGoalTarget = goalArr.getJSONObject(i);
 				}
 			}
-			
-			System.out.println("goalValueUpdated: " + updatedGoalTarget.get("value"));
-			
+
+			System.out.println("goalValueUpdated: "
+					+ updatedGoalTarget.get("value"));
+
 			xmlBuild = "<goalUpdated>";
-				xmlBuild += "<id>" + goalTarget.get("gid") + "</id>";
-				xmlBuild += "<measure>" + goalTarget.get("type") + "</measure>";
-				xmlBuild += "<valueOld>" + goalTarget.get("value") + "</valueOld>";
-				xmlBuild += "<valueUpdated>" + updatedGoalTarget.get("value") + "</valueUpdated>";
+			xmlBuild += "<id>" + goalTarget.get("gid") + "</id>";
+			xmlBuild += "<measure>" + goalTarget.get("type") + "</measure>";
+			xmlBuild += "<valueOld>" + goalTarget.get("value") + "</valueOld>";
+			xmlBuild += "<valueUpdated>" + updatedGoalTarget.get("value")
+					+ "</valueUpdated>";
 			xmlBuild += "</goalUpdated>";
-			
+
 		}
 
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
@@ -468,6 +472,263 @@ public class PersonResource {
 		System.out.println(jsonPrettyPrintString);
 
 		return Response.ok(jsonPrettyPrintString).build();
+	}
+
+	/**
+	 * POST /person/{idPerson}/insertNewMeasure/{measureName} III Integration
+	 * Logic:
+	 * 
+	 * insertNewMeasure(idPerson, inputMeasureJSON, measureName) calls
+	 * <ul>
+	 * readPersonDetails() method in Business Logic Services
+	 * </ul>
+	 * <ul>
+	 * createMeasure(Measure m) method in Storage Services
+	 * </ul>
+	 * <ul>
+	 * getPerson() method in Storage Services
+	 * </ul>
+	 * 
+	 * @return
+	 */
+	@POST
+	@Path("{pid}/insertNewMeasure/{measureName}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response insertNewMeasure(@PathParam("pid") int idPerson,
+			String inputMeasureJSON, @PathParam("measureName") String measureName)
+			throws Exception {
+
+		System.out
+				.println("insertNewMeasure: Third integration logic which calls 3 services sequentially "
+						+ "from Storage and Business Logic Services in Process Centric Services...");
+
+		// GET PERSON/{IDPERSON} --> BLS
+		String path = "/person/" + idPerson;
+
+		String xmlBuild = "";
+
+		ClientConfig clientConfig = new ClientConfig();
+
+		Client client = ClientBuilder.newClient(clientConfig);
+		WebTarget service = client.target(businessLogicServiceURL);
+
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		if (response.getStatus() != 200) {
+			System.out
+					.println("Business Logic Service Error catch response.getStatus() != 200");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(externalErrorMessageBLS(response.toString()))
+					.build();
+		}
+
+		String result = response.readEntity(String.class);
+		JSONObject obj = new JSONObject(result);
+		
+		JSONObject measureTarget = null;
+
+		JSONObject currentMeasureObj = (JSONObject) obj.get("currentHealth");
+		JSONArray measureArr = currentMeasureObj.getJSONArray("measure");
+		for (int i = 0; i < measureArr.length(); i++) {
+			if (measureArr.getJSONObject(i).getString("name").equals(measureName)) {
+				measureTarget = measureArr.getJSONObject(i);
+			}
+		}
+
+		if (measureTarget == null) {
+			// POST PERSON/{IDPERSON}/POST --> SS
+			path = "/person/" + idPerson + "/goal";
+			service = client.target(storageServiceURL);
+
+			response = service
+					.path(path)
+					.request()
+					.accept(mediaType)
+					.post(Entity.entity(inputMeasureJSON, mediaType),
+							Response.class);
+			if (response.getStatus() != 201) {
+				System.out
+						.println("Storage Service Error catch response.getStatus() != 201");
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+						.entity(externalErrorMessageSS(response.toString()))
+						.build();
+			}
+		}
+
+		// GET PERSON/{IDPERSON} --> SS
+		path = "/person/" + idPerson;
+
+		client = ClientBuilder.newClient(clientConfig);
+		service = client.target(storageServiceURL);
+
+		response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		if (response.getStatus() != 200) {
+			System.out
+					.println("Storage Service Error catch response.getStatus() != 200");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(externalErrorMessageSS(response.toString()))
+					.build();
+		}
+
+		result = response.readEntity(String.class);
+
+		obj = new JSONObject(result);
+
+		currentMeasureObj = (JSONObject) obj.get("currentHealth");
+		measureArr = currentMeasureObj.getJSONArray("measure");
+		for (int i = 0; i < measureArr.length(); i++) {
+			if (measureArr.getJSONObject(i).getString("name").equals(measureName)) {
+				measureTarget = measureArr.getJSONObject(i);
+			}
+		}
+
+		System.out.println("Measure: " + measureTarget.get("name"));
+		System.out.println("Value: " + measureTarget.get("value"));
+
+		xmlBuild = "<measure>";
+			xmlBuild += "<id>" + measureTarget.get("mid") + "</id>";
+			xmlBuild += "<type>" + measureTarget.get("name") + "</type>";
+			xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
+		xmlBuild += "</measure>";
+
+		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
+		String jsonPrettyPrintString = xmlJSONObj.toString(4);
+
+		System.out.println(jsonPrettyPrintString);
+
+		return Response.ok(jsonPrettyPrintString).build();
+	}
+
+	/**
+	 * POST /person/{idPerson}/insertNewGoal/{measureName} IV Integration Logic:
+	 * 
+	 * insertNewGoal(idPerson, inputGoalJSON, measureName) calls
+	 * <ul>
+	 * readPersonDetails() method in Business Logic Services
+	 * </ul>
+	 * <ul>
+	 * createGoal(Goal g) method in Storage Services
+	 * </ul>
+	 * <ul>
+	 * getPerson() method in Storage Services
+	 * </ul>
+	 * 
+	 * @return
+	 */
+	@POST
+	@Path("{pid}/insertNewGoal/{measureName}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response insertNewGoal(@PathParam("pid") int idPerson,
+			String inputGoalJSON, @PathParam("measureName") String measureName)
+			throws Exception {
+
+		System.out
+				.println("insertNewGoal: Fourth integration logic which calls 3 services sequentially "
+						+ "from Storage and Business Logic Services in Process Centric Services...");
+
+		// GET PERSON/{IDPERSON} --> BLS
+		String path = "/person/" + idPerson;
+
+		String xmlBuild = "";
+
+		ClientConfig clientConfig = new ClientConfig();
+
+		Client client = ClientBuilder.newClient(clientConfig);
+		WebTarget service = client.target(businessLogicServiceURL);
+
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		if (response.getStatus() != 200) {
+			System.out
+					.println("Business Logic Service Error catch response.getStatus() != 200");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(externalErrorMessageBLS(response.toString()))
+					.build();
+		}
+
+		String result = response.readEntity(String.class);
+
+		JSONObject goalTarget = null;
+
+		JSONObject obj = new JSONObject(result);
+
+		JSONObject goalsObj = (JSONObject) obj.get("goals");
+		JSONArray goalArr = goalsObj.getJSONArray("goal");
+		for (int i = 0; i < goalArr.length(); i++) {
+			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
+				goalTarget = goalArr.getJSONObject(i);
+			}
+		}
+
+		if (goalTarget == null) {
+			// POST PERSON/{IDPERSON}/POST --> SS
+			path = "/person/" + idPerson + "/goal";
+			service = client.target(storageServiceURL);
+
+			response = service
+					.path(path)
+					.request()
+					.accept(mediaType)
+					.post(Entity.entity(inputGoalJSON, mediaType),
+							Response.class);
+			if (response.getStatus() != 201) {
+				System.out
+						.println("Storage Service Error catch response.getStatus() != 201");
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+						.entity(externalErrorMessageSS(response.toString()))
+						.build();
+			}
+		}
+
+		// GET PERSON/{IDPERSON} --> SS
+		path = "/person/" + idPerson;
+
+		client = ClientBuilder.newClient(clientConfig);
+		service = client.target(storageServiceURL);
+
+		response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		if (response.getStatus() != 200) {
+			System.out
+					.println("Storage Service Error catch response.getStatus() != 200");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(externalErrorMessageSS(response.toString()))
+					.build();
+		}
+
+		result = response.readEntity(String.class);
+
+		obj = new JSONObject(result);
+
+		goalsObj = (JSONObject) obj.get("goals");
+		goalArr = goalsObj.getJSONArray("goal");
+		for (int i = 0; i < goalArr.length(); i++) {
+			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
+				goalTarget = goalArr.getJSONObject(i);
+			}
+		}
+
+		System.out.println("Goal: " + goalTarget.get("type"));
+		System.out.println("Value: " + goalTarget.get("value"));
+		System.out.println("Achieved: " + goalTarget.get("achieved"));
+
+		xmlBuild = "<goal>";
+		xmlBuild += "<id>" + goalTarget.get("gid") + "</id>";
+		xmlBuild += "<measure>" + goalTarget.get("type") + "</measure>";
+		xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+		xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
+		xmlBuild += "</goal>";
+
+		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
+		String jsonPrettyPrintString = xmlJSONObj.toString(4);
+
+		System.out.println(jsonPrettyPrintString);
+
+		return Response.ok(jsonPrettyPrintString).build();
+
 	}
 
 	/**
