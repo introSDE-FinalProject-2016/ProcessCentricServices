@@ -190,12 +190,12 @@ public class PersonResource {
 			JSONObject res = null;
 
 			System.out.println("measureValueUpdated: "
-					+ comparisonInfo.get("currentMeasureValue"));
+					+ comparisonInfo.get("measureValue"));
 			System.out.println("result: " + comparisonInfo.get("result"));
 			System.out.println("measure: " + comparisonInfo.get("measure"));
 			System.out.println("goalValue: " + comparisonInfo.get("goalValue"));
-			System.out.println("currentMeasureValue: "
-					+ comparisonInfo.get("currentMeasureValue"));
+			System.out.println("measureValue: "
+					+ comparisonInfo.get("measureValue"));
 
 			if (comparisonInfo.get("result").equals("ok")) {
 				// GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
@@ -294,7 +294,7 @@ public class PersonResource {
 			xmlBuild += "<measureType>" + measureTarget.get("name")
 					+ "</measureType>";
 			xmlBuild += "<measureValueUpdated>"
-					+ comparisonInfo.get("currentMeasureValue")
+					+ comparisonInfo.get("measureValue")
 					+ "</measureValueUpdated>";
 			xmlBuild += "</updatedCurrentHealth>";
 
@@ -304,9 +304,9 @@ public class PersonResource {
 					+ "</measure>";
 			xmlBuild += "<goalValue>" + comparisonInfo.get("goalValue")
 					+ "</goalValue>";
-			xmlBuild += "<currentMeasureValue>"
-					+ comparisonInfo.get("currentMeasureValue")
-					+ "</currentMeasureValue>";
+			xmlBuild += "<measureValue>"
+					+ comparisonInfo.get("measureValue")
+					+ "</measureValue>";
 			xmlBuild += "</comparisonInformation>";
 
 			xmlBuild += "<resultInformation>";
