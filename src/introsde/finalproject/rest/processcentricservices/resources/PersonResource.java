@@ -77,7 +77,7 @@ public class PersonResource {
 
 	/**
 	 * PUT /person/{idPerson}/checkCurrentHealth/{measureName} 
-	 * I° Integration Logic:
+	 * I Integration Logic:
 	 * 
 	 * checkCurrentHealth(idPerson, inputMeasureJSON, measureName) calls
 	 * <ul>readPersonDetails() method in Business Logic Services</ul>
@@ -329,7 +329,7 @@ public class PersonResource {
 	
 	/**
 	 * POST /person/{idPerson}/checkGoal/{measureName} 
-	 * II° Integration Logic:
+	 * II Integration Logic:
 	 * 
 	 * checkGoal(idPerson, inputMeasureJSON, measureName) calls
 	 * <ul>readPersonDetails() method in Business Logic Services</ul>
