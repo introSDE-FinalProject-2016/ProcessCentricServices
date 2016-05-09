@@ -537,7 +537,7 @@ public class PersonResource {
 		}
 
 		if (measureTarget == null) {
-			// POST PERSON/{IDPERSON}/POST --> SS
+			// POST PERSON/{IDPERSON}/MEASURE --> SS
 			path = "/person/" + idPerson + "/measure";
 			service = client.target(storageServiceURL);
 
@@ -664,7 +664,7 @@ public class PersonResource {
 		}
 
 		if (goalTarget == null) {
-			// POST PERSON/{IDPERSON}/POST --> SS
+			// POST PERSON/{IDPERSON}/GOAL --> SS
 			path = "/person/" + idPerson + "/goal";
 			service = client.target(storageServiceURL);
 
