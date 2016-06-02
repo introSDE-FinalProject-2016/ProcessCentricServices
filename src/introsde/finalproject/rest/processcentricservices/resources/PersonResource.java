@@ -81,30 +81,15 @@ public class PersonResource {
 	// ******************* PERSON ***********************
 
 	/**
-	 * PUT /person/{idPerson}/checkMeasure/{measureName} I Integration Logic:
+	 * PUT /person/{idPerson}/checkMeasure/{measureName} I Integration Logic
 	 * 
-	 * checkMeasure(idPerson, inputMeasureJSON, measureName) calls
-	 * <ul>
-	 * readPersonDetails() method in Business Logic Services
-	 * </ul>
-	 * <ul>
-	 * updateMeasure(Measure m) method in Storage Services
-	 * </ul>
-	 * <ul>
-	 * comparisonValueOfMeasure(idPerson, inputMeasureJSON, measureName) method
-	 * in Business Logic Services
-	 * </ul>
-	 * <ul>
-	 * readMotivationHealth(idPerson, measureName) method in Business Logic
-	 * Services
-	 * </ul>
-	 * <ul>
-	 * readMotivationGoal(idPerson, measureName) method in Business Logic
-	 * Services
-	 * </ul>
-	 * <ul>
-	 * getPicture() method in Storage Services
-	 * </ul>
+	 * checkMeasure(idPerson, inputMeasureJSON, measureName) calls the following methods:
+	 * *readPersonDetails(idPerson) --> BLS
+	 * *updateMeasure(idPerson, inputMeasureJSON, measureName) --> SS
+	 * *comparisonValueOfMeasure(idPerson, inputMeasureJSON, measureName) --> BLS
+	 * *readMotivationHealth(idPerson, measureName) --> BLS
+	 * *readMotivationGoal(idPerson, measureName) --> BLS
+	 * *getPicture() --> SS
 	 * 
 	 * @return
 	 */
@@ -345,18 +330,12 @@ public class PersonResource {
 	}
 
 	/**
-	 * PUT /person/{idPerson}/checkGoal/{measureName} II Integration Logic:
-	 * 
-	 * checkGoal(idPerson, inputGoalJSON, measureName) calls
-	 * <ul>
-	 * readPersonDetails() method in Business Logic Services
-	 * </ul>
-	 * <ul>
-	 * updateGoal(Goal g) method in Storage Services
-	 * </ul>
-	 * <ul>
-	 * getPerson(int idPerson) method in Storage Services
-	 * </ul>
+	 * PUT /person/{idPerson}/checkGoal/{measureName} II Integration Logic
+	 *
+	 * checkGoal(idPerson, inputGoalJSON, measureName) calls the following methods:
+	 * *readPersonDetails(idPerson) --> BLS
+	 * *updateGoal(idPerson,inputGoalJSON,measureName) --> SS
+	 * *getPerson(idPerson) --> SS
 	 * 
 	 * @return
 	 */
@@ -480,19 +459,12 @@ public class PersonResource {
 	}
 
 	/**
-	 * POST /person/{idPerson}/insertNewMeasure/{measureName} III Integration
-	 * Logic:
+	 * POST /person/{idPerson}/insertNewMeasure/{measureName} III Integration Logic
 	 * 
-	 * insertNewMeasure(idPerson, inputMeasureJSON, measureName) calls
-	 * <ul>
-	 * readPersonDetails() method in Business Logic Services
-	 * </ul>
-	 * <ul>
-	 * createMeasure(Measure m) method in Storage Services
-	 * </ul>
-	 * <ul>
-	 * getPerson() method in Storage Services
-	 * </ul>
+	 * insertNewMeasure(idPerson, inputMeasureJSON, measureName) calls the following methods:
+	 * *readPersonDetails(idPerson) --> BLS
+	 * *createMeasure(idPerson, inputMeasureJSON) --> SS
+	 * *getPerson(idPerson) --> SS
 	 * 
 	 * @return
 	 */
@@ -612,15 +584,9 @@ public class PersonResource {
 	 * POST /person/{idPerson}/insertNewGoal/{measureName} IV Integration Logic:
 	 * 
 	 * insertNewGoal(idPerson, inputGoalJSON, measureName) calls
-	 * <ul>
-	 * readPersonDetails() method in Business Logic Services
-	 * </ul>
-	 * <ul>
-	 * createGoal(Goal g) method in Storage Services
-	 * </ul>
-	 * <ul>
-	 * getPerson() method in Storage Services
-	 * </ul>
+	 * *readPersonDetails(idPerson) --> BLS
+	 * *createGoal(idPerson, inputGoalJSON) --> SS
+	 * *getPerson(idPerson) --> SS
 	 * 
 	 * @return
 	 */
@@ -739,22 +705,13 @@ public class PersonResource {
 	}
 
 	/**
-	 * POST /person/{idPerson}/verifyGoal/{measureName} V Integration Logic:
+	 * POST /person/{idPerson}/verifyGoal/{measureName} V Integration Logic
 	 * 
-	 * verifyGoal(idPerson, inputMeasureJSON, measureName) calls
-	 * <ul>
-	 * readPersonDetails() method in Business Logic Services
-	 * </ul>
-	 * <ul>
-	 * createGoal(Goal g) method in Storage Services
-	 * </ul>
-	 * <ul>
-	 * getPerson() method in Storage Services
-	 * </ul>
-	 * <ul>
-	 * readMotivationGoal(idPerson, measureName) method in Business Logic
-	 * Services
-	 * </ul>
+	 * verifyGoal(idPerson, inputGoalJSON, measureName) method calls the following methods:
+	 * *readPersonDetails(idPerson) --> BLS
+	 * *createGoal(idPerson, inputGoalJSON) --> SS
+	 * *getPerson(idPerson) --> SS
+	 * *readMotivationGoal(idPerson, measureName) --> BLS
 	 * 
 	 * @return
 	 */
@@ -767,7 +724,7 @@ public class PersonResource {
 			throws Exception {
 
 		System.out
-				.println("verifyGoal: Second integration logic which calls 4 services sequentially "
+				.println("verifyGoal: Firth integration logic which calls 4 services sequentially "
 						+ "from Storage and Business Logic Services in Process Centric Services...");
 
 		// GET PERSON/{IDPERSON} --> BLS
@@ -894,7 +851,19 @@ public class PersonResource {
 
 	}
 
-	// ///me
+	/***
+	 * GET /person/{idPerson}/comparisonInfo/{measureName} VI Integration Logic
+	 * 
+	 * ComparisonInfo(idPerson, measureName) method calls the following methods:
+	 * *readPersonDetails(idPerson) --> BLS
+	 * *comparisonValueOfMeasure(idPerson, measureName) --> BLS
+	 * *readMeasureTypes() --> PCS
+	 * *getQuote() --> AS
+	 * @param idPerson
+	 * @param measureName
+	 * @return
+	 * @throws Exception
+	 */
 	@GET
 	@Path("{pid}/comparisonInfo/{measureName}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -903,7 +872,7 @@ public class PersonResource {
 			@PathParam("measureName") String measureName) throws Exception {
 
 		System.out
-				.println("comparisonInfo: Six integration logic which calls 4 services sequentially "
+				.println("comparisonInfo: Sixth integration logic which calls 4 services sequentially "
 						+ "from Storage and Business Logic Services in Process Centric Services...");
 
 		// I. GET PERSON/{IDPERSON} --> BLS
