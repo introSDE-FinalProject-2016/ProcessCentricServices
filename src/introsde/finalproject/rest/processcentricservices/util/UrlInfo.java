@@ -13,8 +13,9 @@ public class UrlInfo {
 	//static final String adapterUrl = "http://127.0.1.1:5702/sdelab/adapter-service";
 	static final String adapterUrl = "https://stark-island-39603.herokuapp.com/sdelab/adapter-service";
 	
-	static final String processCentricUrl = "http://127.0.1.1:5703/sdelab/processCentric-service";
-	
+	//static final String processCentricUrl = "http://127.0.1.1:5703/sdelab/processCentric-service"; 
+	static final String processCentricUrl = "https://desolate-thicket-56593.herokuapp.com/sdelab/processCentric-service"; 
+
 	/**
 	 * This method is used to get the business logic url
 	 * @return
@@ -30,5 +31,23 @@ public class UrlInfo {
 	 */
 	public String getStorageURL() {
 		return storageUrl;
+	}
+	
+	
+	/**
+	 * This method is used to get the adapter url
+	 * @return
+	 */
+	public String getAdapterURL() {
+		return adapterUrl;
+	}
+
+
+	/**
+	 * This method is used to get the process centric url
+	 * @return
+	 */
+	public String getProcesscentricURL() {
+		return processCentricUrl;
 	}
 }
