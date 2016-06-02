@@ -11,7 +11,7 @@ public class UrlInfo {
 	static final String storageUrl = "https://warm-hamlet-95336.herokuapp.com/sdelab/storage-service";
 	
 	//static final String adapterUrl = "http://127.0.1.1:5702/sdelab/adapter-service";
-	static final String adapterUrl = "https://desolate-scrubland-21919.herokuapp.com/sdelab/adapter-service";
+	static final String adapterUrl = "https://stark-island-39603.herokuapp.com/sdelab/adapter-service";
 	
 	static final String processCentricUrl = "http://127.0.1.1:5703/sdelab/processCentric-service";
 	
