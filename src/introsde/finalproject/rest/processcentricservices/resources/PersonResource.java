@@ -8,6 +8,7 @@ import java.io.InputStreamReader;
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
@@ -43,6 +44,8 @@ public class PersonResource {
 	private UrlInfo urlInfo;
 	private String businessLogicServiceURL;
 	private String storageServiceURL;
+	private String adapterServiceURL;
+	private String processCentricServiceURL;
 
 	private static String mediaType = MediaType.APPLICATION_JSON;
 
@@ -56,6 +59,8 @@ public class PersonResource {
 		this.urlInfo = new UrlInfo();
 		this.businessLogicServiceURL = urlInfo.getBusinesslogicURL();
 		this.storageServiceURL = urlInfo.getStorageURL();
+		this.adapterServiceURL = urlInfo.getAdapterURL();
+		this.processCentricServiceURL = urlInfo.getProcesscentricURL();
 	}
 
 	private String errorMessage(Exception e) {
@@ -496,8 +501,8 @@ public class PersonResource {
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response insertNewMeasure(@PathParam("pid") int idPerson,
-			String inputMeasureJSON, @PathParam("measureName") String measureName)
-			throws Exception {
+			String inputMeasureJSON,
+			@PathParam("measureName") String measureName) throws Exception {
 
 		System.out
 				.println("insertNewMeasure: Third integration logic which calls 3 services sequentially "
@@ -525,13 +530,14 @@ public class PersonResource {
 
 		String result = response.readEntity(String.class);
 		JSONObject obj = new JSONObject(result);
-		
+
 		JSONObject measureTarget = null;
 
 		JSONObject currentMeasureObj = (JSONObject) obj.get("currentHealth");
 		JSONArray measureArr = currentMeasureObj.getJSONArray("measure");
 		for (int i = 0; i < measureArr.length(); i++) {
-			if (measureArr.getJSONObject(i).getString("name").equals(measureName)) {
+			if (measureArr.getJSONObject(i).getString("name")
+					.equals(measureName)) {
 				measureTarget = measureArr.getJSONObject(i);
 			}
 		}
@@ -579,7 +585,8 @@ public class PersonResource {
 		currentMeasureObj = (JSONObject) obj.get("currentHealth");
 		measureArr = currentMeasureObj.getJSONArray("measure");
 		for (int i = 0; i < measureArr.length(); i++) {
-			if (measureArr.getJSONObject(i).getString("name").equals(measureName)) {
+			if (measureArr.getJSONObject(i).getString("name")
+					.equals(measureName)) {
 				measureTarget = measureArr.getJSONObject(i);
 			}
 		}
@@ -588,9 +595,9 @@ public class PersonResource {
 		System.out.println("Value: " + measureTarget.get("value"));
 
 		xmlBuild = "<measure>";
-			xmlBuild += "<id>" + measureTarget.get("mid") + "</id>";
-			xmlBuild += "<type>" + measureTarget.get("name") + "</type>";
-			xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
+		xmlBuild += "<id>" + measureTarget.get("mid") + "</id>";
+		xmlBuild += "<type>" + measureTarget.get("name") + "</type>";
+		xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
 		xmlBuild += "</measure>";
 
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
@@ -732,7 +739,7 @@ public class PersonResource {
 	}
 
 	/**
-	 * POST /person/{idPerson}/verifyGoal/{measureName} II Integration Logic:
+	 * POST /person/{idPerson}/verifyGoal/{measureName} V Integration Logic:
 	 * 
 	 * verifyGoal(idPerson, inputMeasureJSON, measureName) calls
 	 * <ul>
@@ -887,7 +894,144 @@ public class PersonResource {
 
 	}
 
+	// ///me
+	@GET
+	@Path("{pid}/comparisonInfo/{measureName}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response comparisonInfo(@PathParam("pid") int idPerson,
+			@PathParam("measureName") String measureName) throws Exception {
+
+		System.out
+				.println("comparisonInfo: Six integration logic which calls 4 services sequentially "
+						+ "from Storage and Business Logic Services in Process Centric Services...");
+
+		// I. GET PERSON/{IDPERSON} --> BLS
+		String path = "/person/" + idPerson;
+
+		String xmlBuild = "";
+
+		ClientConfig clientConfig = new ClientConfig();
+
+		Client client = ClientBuilder.newClient(clientConfig);
+		WebTarget service = client.target(businessLogicServiceURL);
+
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		if (response.getStatus() != 200) {
+			System.out
+					.println("Business Logic Service Error catch response.getStatus() != 200");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(externalErrorMessageBLS(response.toString()))
+					.build();
+		}
+
+		String result = response.readEntity(String.class);
+
+		JSONObject goalTarget = null;
+		JSONObject measureTarget = null;
+
+		JSONObject obj = new JSONObject(result);
+
+		// check if list current measure contains the measure target
+		JSONObject currentObj = (JSONObject) obj.get("currentHealth");
+		JSONArray measureArr = currentObj.getJSONArray("measure");
+		for (int i = 0; i < measureArr.length(); i++) {
+			if (measureArr.getJSONObject(i).getString("name")
+					.equals(measureName)) {
+				measureTarget = measureArr.getJSONObject(i);
+			}
+		}
+
+		// check if list goal contains the goal target
+		JSONObject goalsObj = (JSONObject) obj.get("goals");
+		JSONArray goalArr = goalsObj.getJSONArray("goal");
+		for (int i = 0; i < goalArr.length(); i++) {
+			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
+				goalTarget = goalArr.getJSONObject(i);
+			}
+		}
+
+		if ((measureTarget == null) && (goalTarget != null)) {
+			xmlBuild = "<measure>" + measureName + " does not exist "
+					+ "</measure>";
+			xmlBuild += "<goal>" + measureName + " exist " + "</goal>";
+
+		} else if ((measureTarget != null) && (goalTarget == null)) {
+			xmlBuild = "<measure>" + measureName + " exist " + "</measure>";
+			xmlBuild += "<goal>" + measureName + " does not exist " + "</goal>";
+
+		} else {
+
+			// II. GET PERSON/{IDPERSON}/COMPARISON-VALUE/{MEASURENAME} --> BLS
+			path = "/person/" + idPerson + "/comparison-value/"
+					+ measureTarget.get("name");
+
+			DefaultHttpClient httpClient = new DefaultHttpClient();
+			HttpGet request = new HttpGet(businessLogicServiceURL + path);
+			HttpResponse resp = httpClient.execute(request);
+
+			BufferedReader rd = new BufferedReader(new InputStreamReader(resp
+					.getEntity().getContent()));
+
+			StringBuffer rs = new StringBuffer();
+			String line = "";
+			while ((line = rd.readLine()) != null) {
+				rs.append(line);
+			}
+
+			JSONObject obj2 = new JSONObject(rs.toString());
+
+			if (resp.getStatusLine().getStatusCode() != 200) {
+				System.out
+						.println("Business Logic Service Error catch response.getStatus() != 200");
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+						.entity(externalErrorMessageBLS(response.toString()))
+						.build();
+			}
+
+			JSONObject comparisonInfo = (JSONObject) obj2
+					.getJSONObject("comparison-information");
+
+			// III. GET /MEASURETYPES
+			String measureType = getMeasureType(measureName);
+
+			// IV. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
+			// IV. GET /MOTIVATION-QUOTE --> AS
+			String quote = getQuote(goalTarget.getBoolean("achieved"));
+			
+			xmlBuild = "<info>";
+
+				xmlBuild += "<measure>";
+				xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
+				xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
+				xmlBuild += "<type>" + measureType + "</type>";
+				xmlBuild += "</measure>";
+				
+				xmlBuild += "<goal>"; 
+				xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
+				xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+				xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
+				xmlBuild += "</goal>";
+				
+				xmlBuild += "<comparison>";
+				xmlBuild += "<result>" + comparisonInfo.get("result") + "</result>";
+				xmlBuild += "<quote>" + quote + "</quote>";
+				xmlBuild += "</comparison>";
+				
+			xmlBuild += "</info>";
+		}
+		
+		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
+		String jsonPrettyPrintString = xmlJSONObj.toString(4);
+
+		System.out.println(jsonPrettyPrintString);
+
+		return Response.ok(jsonPrettyPrintString).build();
+	}
+
 	/**
+	 * This method check if goal was achieved
 	 * 
 	 * @param check
 	 *            Boolean
@@ -897,16 +1041,17 @@ public class PersonResource {
 		if (check == true) {
 			return "Very good, you achieved a new goal!!! :)";
 		} else {
-			return getMotivationPhrase(idPerson, measureName);
+			return getMotivationGoal(idPerson, measureName);
 		}
 	}
 
 	/**
-	 * Returns a motivation phrase Calls one time the BLS
+	 * This method call readMotivationGoal from BLS and returns a motivation
+	 * goal phrase
 	 * 
 	 * @return String
 	 */
-	private String getMotivationPhrase(int idPerson, String measureName) {
+	private String getMotivationGoal(int idPerson, String measureName) {
 		String path = "/person/" + idPerson + "/motivation-goal/" + measureName;
 		ClientConfig clientConfig = new ClientConfig();
 
@@ -920,4 +1065,58 @@ public class PersonResource {
 		return obj.getJSONObject("motivationGoal").getJSONObject("goal")
 				.getString("motivation");
 	}
+
+	/**
+	 * This method check if goal was achieved
+	 * 
+	 * @param check
+	 *            Boolean
+	 * @return String a motivation phrase
+	 */
+	private String getQuote(Boolean check) {
+		if (check == true) {
+			return "Very good, you achieved a new goal!!! :)";
+		} else {
+			return getMotivationQuote();
+		}
+	}
+
+	/**
+	 * This method call getQuote from AS and returns a quote
+	 * 
+	 * @return String
+	 */
+	private String getMotivationQuote() {
+		String path = "/motivation-quote";
+		ClientConfig clientConfig = new ClientConfig();
+
+		Client client = ClientBuilder.newClient(clientConfig);
+		WebTarget service = client.target(adapterServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+
+		String result = response.readEntity(String.class);
+		JSONObject obj = new JSONObject(result);
+		return obj.getJSONObject("result").getString("quote");
+	}
+
+	/**
+	 * This method call measureTypes from PCS and returns measureType
+	 * 
+	 * @return String
+	 */
+	private String getMeasureType(String measureName) {
+		String path = "/measureTypes";
+		ClientConfig clientConfig = new ClientConfig();
+
+		Client client = ClientBuilder.newClient(clientConfig);
+		WebTarget service = client.target(processCentricServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+
+		String result = response.readEntity(String.class);
+		JSONObject obj = new JSONObject(result);
+		return obj.getJSONObject("measureTypes").getString(measureName);
+	}
+
 }
