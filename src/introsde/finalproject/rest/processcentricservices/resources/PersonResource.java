@@ -83,12 +83,11 @@ public class PersonResource {
 	/**
 	 * PUT /person/{idPerson}/checkMeasure/{measureName} I Integration Logic
 	 * 
-	 * checkMeasure(idPerson, inputMeasureJSON, measureName) calls the following methods:
-	 * *readPersonDetails(idPerson) --> BLS
-	 * *updateMeasure(idPerson, inputMeasureJSON, measureName) --> SS
-	 * *comparisonValueOfMeasure(idPerson, inputMeasureJSON, measureName) --> BLS
-	 * *readMotivationHealth(idPerson, measureName) --> BLS
-	 * *readMotivationGoal(idPerson, measureName) --> BLS
+	 * checkMeasure(idPerson, inputMeasureJSON, measureName) calls the following
+	 * methods: *readPersonDetails(idPerson) --> BLS *updateMeasure(idPerson,
+	 * inputMeasureJSON, measureName) --> SS *comparisonValueOfMeasure(idPerson,
+	 * inputMeasureJSON, measureName) --> BLS *readMotivationHealth(idPerson,
+	 * measureName) --> BLS *readMotivationGoal(idPerson, measureName) --> BLS
 	 * *getPicture() --> SS
 	 * 
 	 * @return
@@ -332,8 +331,8 @@ public class PersonResource {
 	/**
 	 * PUT /person/{idPerson}/checkGoal/{measureName} II Integration Logic
 	 *
-	 * checkGoal(idPerson, inputGoalJSON, measureName) calls the following methods:
-	 * *readPersonDetails(idPerson) --> BLS
+	 * checkGoal(idPerson, inputGoalJSON, measureName) calls the following
+	 * methods: *readPersonDetails(idPerson) --> BLS
 	 * *updateGoal(idPerson,inputGoalJSON,measureName) --> SS
 	 * *getPerson(idPerson) --> SS
 	 * 
@@ -459,12 +458,13 @@ public class PersonResource {
 	}
 
 	/**
-	 * POST /person/{idPerson}/insertNewMeasure/{measureName} III Integration Logic
+	 * POST /person/{idPerson}/insertNewMeasure/{measureName} III Integration
+	 * Logic
 	 * 
-	 * insertNewMeasure(idPerson, inputMeasureJSON, measureName) calls the following methods:
-	 * *readPersonDetails(idPerson) --> BLS
-	 * *createMeasure(idPerson, inputMeasureJSON) --> SS
-	 * *getPerson(idPerson) --> SS
+	 * insertNewMeasure(idPerson, inputMeasureJSON, measureName) calls the
+	 * following methods: *readPersonDetails(idPerson) --> BLS
+	 * *createMeasure(idPerson, inputMeasureJSON) --> SS *getPerson(idPerson)
+	 * --> SS
 	 * 
 	 * @return
 	 */
@@ -584,9 +584,8 @@ public class PersonResource {
 	 * POST /person/{idPerson}/insertNewGoal/{measureName} IV Integration Logic:
 	 * 
 	 * insertNewGoal(idPerson, inputGoalJSON, measureName) calls
-	 * *readPersonDetails(idPerson) --> BLS
-	 * *createGoal(idPerson, inputGoalJSON) --> SS
-	 * *getPerson(idPerson) --> SS
+	 * *readPersonDetails(idPerson) --> BLS *createGoal(idPerson, inputGoalJSON)
+	 * --> SS *getPerson(idPerson) --> SS
 	 * 
 	 * @return
 	 */
@@ -707,10 +706,9 @@ public class PersonResource {
 	/**
 	 * POST /person/{idPerson}/verifyGoal/{measureName} V Integration Logic
 	 * 
-	 * verifyGoal(idPerson, inputGoalJSON, measureName) method calls the following methods:
-	 * *readPersonDetails(idPerson) --> BLS
-	 * *createGoal(idPerson, inputGoalJSON) --> SS
-	 * *getPerson(idPerson) --> SS
+	 * verifyGoal(idPerson, inputGoalJSON, measureName) method calls the
+	 * following methods: *readPersonDetails(idPerson) --> BLS
+	 * *createGoal(idPerson, inputGoalJSON) --> SS *getPerson(idPerson) --> SS
 	 * *readMotivationGoal(idPerson, measureName) --> BLS
 	 * 
 	 * @return
@@ -770,9 +768,9 @@ public class PersonResource {
 				goalTarget = goalArr.getJSONObject(i);
 			}
 		}
-		
+
 		if (goalTarget == null) {
-			
+
 			// II. POST PERSON/{IDPERSON}/GOAL --> SS
 			path = "/person/" + idPerson + "/goal";
 			service = client.target(storageServiceURL);
@@ -790,39 +788,65 @@ public class PersonResource {
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
 			}
-			
-		}else{
-			
-			// III. GET /MEASURETYPES -> PCS
-			String measureType = getMeasureType(measureName);
-
-			// IV. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
-			String phrase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
-					measureName);
-
-			xmlBuild = "<person>";
-			xmlBuild += "<id>" + obj.get("pid") + "</id>";
-			xmlBuild += "<firstname>" + obj.get("firstname") + "</firstname>";
-			xmlBuild += "</person>";
-
-			xmlBuild += "<measure>";
-			xmlBuild += "<id>" + measureTarget.get("mid") + "</id>";
-			xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
-			xmlBuild += "<type>" + measureType + "</type>";
-			xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
-			xmlBuild += "<created>" + measureTarget.get("created") + "</created>";
-			xmlBuild += "</measure>";
-
-			xmlBuild += "<goal>";
-			xmlBuild += "<id>" + goalTarget.get("gid") + "</id>";
-			xmlBuild += "<type>" + goalTarget.get("type") + "</type>";
-			xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
-			xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
-			xmlBuild += "<motivation>" + phrase + "</motivation>";
-			xmlBuild += "</goal>";
 
 		}
-	
+
+		// III. GET PERSON/{IDPERSON} --> SS
+		path = "/person/" + idPerson;
+
+		client = ClientBuilder.newClient(clientConfig);
+		service = client.target(storageServiceURL);
+
+		response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		if (response.getStatus() != 200) {
+			System.out
+					.println("Storage Service Error catch response.getStatus() != 200");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(externalErrorMessageSS(response.toString()))
+					.build();
+		}
+
+		result = response.readEntity(String.class);
+
+		obj = new JSONObject(result);
+
+		goalsObj = (JSONObject) obj.get("goals");
+		goalArr = goalsObj.getJSONArray("goal");
+		for (int i = 0; i < goalArr.length(); i++) {
+			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
+				goalTarget = goalArr.getJSONObject(i);
+			}
+		}
+
+		// IV. GET /MEASURETYPES -> PCS
+		String measureType = getMeasureType(measureName);
+
+		// V. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
+		String phrase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
+				measureName);
+
+		xmlBuild = "<person>";
+		xmlBuild += "<id>" + obj.get("pid") + "</id>";
+		xmlBuild += "<firstname>" + obj.get("firstname") + "</firstname>";
+		xmlBuild += "</person>";
+
+		xmlBuild += "<measure>";
+		xmlBuild += "<id>" + measureTarget.get("mid") + "</id>";
+		xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
+		xmlBuild += "<type>" + measureType + "</type>";
+		xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
+		xmlBuild += "<created>" + measureTarget.get("created") + "</created>";
+		xmlBuild += "</measure>";
+
+		xmlBuild += "<goal>";
+		xmlBuild += "<id>" + goalTarget.get("gid") + "</id>";
+		xmlBuild += "<type>" + goalTarget.get("type") + "</type>";
+		xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+		xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
+		xmlBuild += "<motivation>" + phrase + "</motivation>";
+		xmlBuild += "</goal>";
+
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 
@@ -836,10 +860,9 @@ public class PersonResource {
 	 * GET /person/{idPerson}/comparisonInfo/{measureName} VI Integration Logic
 	 * 
 	 * ComparisonInfo(idPerson, measureName) method calls the following methods:
-	 * *readPersonDetails(idPerson) --> BLS
-	 * *comparisonValueOfMeasure(idPerson, measureName) --> BLS
-	 * *readMeasureTypes() --> PCS
-	 * *getQuote() --> AS
+	 * *readPersonDetails(idPerson) --> BLS *comparisonValueOfMeasure(idPerson,
+	 * measureName) --> BLS *readMeasureTypes() --> PCS *getQuote() --> AS
+	 * 
 	 * @param idPerson
 	 * @param measureName
 	 * @return
@@ -949,29 +972,30 @@ public class PersonResource {
 			// IV. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
 			// IV. GET /MOTIVATION-QUOTE --> AS
 			String quote = getMotivationQuote();
-			
+
 			xmlBuild = "<info>";
 
-				xmlBuild += "<measure>";
-				xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
-				xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
-				xmlBuild += "<type>" + measureType + "</type>";
-				xmlBuild += "</measure>";
-				
-				xmlBuild += "<goal>"; 
-				xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
-				xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
-				xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
-				xmlBuild += "</goal>";
-				
-				xmlBuild += "<comparison>";
-				xmlBuild += "<result>" + comparisonInfo.get("result") + "</result>";
-				xmlBuild += "<quote>" + quote + "</quote>";
-				xmlBuild += "</comparison>";
-				
+			xmlBuild += "<measure>";
+			xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
+			xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
+			xmlBuild += "<type>" + measureType + "</type>";
+			xmlBuild += "</measure>";
+
+			xmlBuild += "<goal>";
+			xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
+			xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+			xmlBuild += "<achieved>" + goalTarget.get("achieved")
+					+ "</achieved>";
+			xmlBuild += "</goal>";
+
+			xmlBuild += "<comparison>";
+			xmlBuild += "<result>" + comparisonInfo.get("result") + "</result>";
+			xmlBuild += "<quote>" + quote + "</quote>";
+			xmlBuild += "</comparison>";
+
 			xmlBuild += "</info>";
 		}
-		
+
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 
@@ -1015,7 +1039,6 @@ public class PersonResource {
 		return obj.getJSONObject("motivationGoal").getJSONObject("goal")
 				.getString("motivation");
 	}
-
 
 	/**
 	 * This method call getQuote from AS and returns a quote
