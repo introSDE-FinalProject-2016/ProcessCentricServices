@@ -770,8 +770,8 @@ public class PersonResource {
 					.path(path)
 					.request()
 					.accept(mediaType)
-					.post(Entity.entity(inputGoalJSON, mediaType),
-							Response.class);
+					.post(Entity.json(inputGoalJSON));
+			
 			if (response.getStatus() != 201) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
