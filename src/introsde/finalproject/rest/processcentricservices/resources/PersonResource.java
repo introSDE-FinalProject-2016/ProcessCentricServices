@@ -767,13 +767,13 @@ public class PersonResource {
 			
 			response = service.path(path).request(mediaType).post(Entity.json(inputGoalJSON));
 			
-			/*if (response.getStatus() != 201) {
+			if (response.getStatus() != 201) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
-			}*/
+			}
 		}
 		
 		System.out.println(measureName + " does exist. I verified a goal for a given measure");
@@ -824,7 +824,7 @@ public class PersonResource {
 		}
 
 		// IV. GET /MEASURETYPES -> PCS
-		String measureType = getMeasureType(measureName);
+		//String measureType = getMeasureType(measureName);
 
 		// V. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
 		String phrase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
@@ -837,7 +837,7 @@ public class PersonResource {
 
 		xmlBuild += "<measure>";
 		xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
-		xmlBuild += "<type>" + measureType + "</type>";
+		//xmlBuild += "<type>" + measureType + "</type>";
 		xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
 		xmlBuild += "<created>" + measureTarget.get("created") + "</created>";
 		xmlBuild += "</measure>";
