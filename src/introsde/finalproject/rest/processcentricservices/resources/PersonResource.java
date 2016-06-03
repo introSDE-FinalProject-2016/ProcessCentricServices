@@ -752,15 +752,6 @@ public class PersonResource {
 
 		JSONObject obj = new JSONObject(result);
 
-		JSONObject currentHealthObj = (JSONObject) obj.get("currentHealth");
-		JSONArray measureArr = currentHealthObj.getJSONArray("measure");
-		for (int i = 0; i < measureArr.length(); i++) {
-			if (measureArr.getJSONObject(i).getString("name")
-					.equals(measureName)) {
-				measureTarget = measureArr.getJSONObject(i);
-			}
-		}
-
 		JSONObject goalsObj = (JSONObject) obj.get("goals");
 		JSONArray goalArr = goalsObj.getJSONArray("goal");
 		for (int i = 0; i < goalArr.length(); i++) {
@@ -788,7 +779,7 @@ public class PersonResource {
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
 			}
-
+			
 		}
 
 		// III. GET PERSON/{IDPERSON} --> SS
@@ -811,8 +802,8 @@ public class PersonResource {
 
 		obj = new JSONObject(result);
 
-		currentHealthObj = (JSONObject) obj.get("currentHealth");
-		measureArr = currentHealthObj.getJSONArray("measure");
+		JSONObject currentHealthObj = (JSONObject) obj.get("currentHealth");
+		JSONArray measureArr = currentHealthObj.getJSONArray("measure");
 		for (int i = 0; i < measureArr.length(); i++) {
 			if (measureArr.getJSONObject(i).getString("name")
 					.equals(measureName)) {
@@ -834,14 +825,13 @@ public class PersonResource {
 		// V. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
 		String phrase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
 				measureName);
-
-		xmlBuild = "<person>";
-		xmlBuild += "<id>" + obj.get("pid") + "</id>";
+		
+		xmlBuild = "<verifyGoal>";
+		xmlBuild += "<person>";
 		xmlBuild += "<firstname>" + obj.get("firstname") + "</firstname>";
 		xmlBuild += "</person>";
 
 		xmlBuild += "<measure>";
-		xmlBuild += "<id>" + measureTarget.get("mid") + "</id>";
 		xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
 		xmlBuild += "<type>" + measureType + "</type>";
 		xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
@@ -849,13 +839,13 @@ public class PersonResource {
 		xmlBuild += "</measure>";
 
 		xmlBuild += "<goal>";
-		xmlBuild += "<id>" + goalTarget.get("gid") + "</id>";
-		xmlBuild += "<type>" + goalTarget.get("type") + "</type>";
+		xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
 		xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
 		xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
 		xmlBuild += "<motivation>" + phrase + "</motivation>";
 		xmlBuild += "</goal>";
-
+		xmlBuild += "</verifyGoal>";
+		
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 
