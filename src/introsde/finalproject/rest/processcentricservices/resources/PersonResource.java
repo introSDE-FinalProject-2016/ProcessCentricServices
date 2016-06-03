@@ -785,12 +785,22 @@ public class PersonResource {
 		// III. GET PERSON/{IDPERSON} --> SS
 		path = "/person/" + idPerson;
 
-		client = ClientBuilder.newClient(clientConfig);
-		service = client.target(storageServiceURL);
+		DefaultHttpClient httpClient = new DefaultHttpClient();
+		HttpGet request = new HttpGet(storageServiceURL + path);
+		HttpResponse resp = httpClient.execute(request);
 
-		response = service.path(path).request().accept(mediaType)
-				.get(Response.class);
-		if (response.getStatus() != 200) {
+		BufferedReader rd = new BufferedReader(new InputStreamReader(resp
+				.getEntity().getContent()));
+
+		StringBuffer rs = new StringBuffer();
+		String line = "";
+		while ((line = rd.readLine()) != null) {
+			rs.append(line);
+		}
+
+		JSONObject obj2 = new JSONObject(rs.toString());
+		
+		if (resp.getStatusLine().getStatusCode() != 200) {
 			System.out
 					.println("Storage Service Error catch response.getStatus() != 200");
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -798,11 +808,7 @@ public class PersonResource {
 					.build();
 		}
 
-		result = response.readEntity(String.class);
-
-		obj = new JSONObject(result);
-
-		JSONObject currentHealthObj = (JSONObject) obj.get("currentHealth");
+		JSONObject currentHealthObj = (JSONObject) obj2.get("currentHealth");
 		JSONArray measureArr = currentHealthObj.getJSONArray("measure");
 		for (int i = 0; i < measureArr.length(); i++) {
 			if (measureArr.getJSONObject(i).getString("name")
@@ -811,7 +817,7 @@ public class PersonResource {
 			}
 		}
 		
-		goalsObj = (JSONObject) obj.get("goals");
+		goalsObj = (JSONObject) obj2.get("goals");
 		goalArr = goalsObj.getJSONArray("goal");
 		for (int i = 0; i < goalArr.length(); i++) {
 			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
@@ -828,7 +834,7 @@ public class PersonResource {
 		
 		xmlBuild = "<verifyGoal>";
 		xmlBuild += "<person>";
-		xmlBuild += "<firstname>" + obj.get("firstname") + "</firstname>";
+		xmlBuild += "<firstname>" + obj2.get("firstname") + "</firstname>";
 		xmlBuild += "</person>";
 
 		xmlBuild += "<measure>";
