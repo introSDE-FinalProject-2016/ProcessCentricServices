@@ -713,12 +713,11 @@ public class PersonResource {
 	 * 
 	 * @return
 	 */
-	@POST
+	@GET
 	@Path("{pid}/verifyGoal/{measureName}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response verifyGoal(@PathParam("pid") int idPerson,
-			String inputGoalJSON, @PathParam("measureName") String measureName)
+	public Response verifyGoal(@PathParam("pid") int idPerson, @PathParam("measureName") String measureName)
 			throws Exception {
 
 		System.out
@@ -747,9 +746,19 @@ public class PersonResource {
 		String result = response.readEntity(String.class);
 
 		JSONObject goalTarget = null;
+		JSONObject measureTarget = null;
 
 		JSONObject obj = new JSONObject(result);
 
+		JSONObject currentHealthObj = (JSONObject) obj.get("currentHealth");
+		JSONArray measureArr = currentHealthObj.getJSONArray("measure");
+		for (int i = 0; i < measureArr.length(); i++) {
+			if (measureArr.getJSONObject(i).getString("name")
+					.equals(measureName)) {
+				measureTarget = measureArr.getJSONObject(i);
+			}
+		}
+		
 		JSONObject goalsObj = (JSONObject) obj.get("goals");
 		JSONArray goalArr = goalsObj.getJSONArray("goal");
 		for (int i = 0; i < goalArr.length(); i++) {
@@ -757,8 +766,50 @@ public class PersonResource {
 				goalTarget = goalArr.getJSONObject(i);
 			}
 		}
+		
+		if(goalTarget ==  null){
+			System.out.println(measureName + " does exist!");
+			xmlBuild = "<goal>" + measureName + " doesn't exist!" + "</goal>";
+			
+		}else{
+			System.out.println(measureName + "  exist!");
+			// II. GET /MEASURETYPES -> PCS
+			String measureType = getMeasureType(measureName);
 
-		if (goalTarget == null) {
+			// III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
+			String phrase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
+					measureName);
+			
+			xmlBuild = "<verifyGoal>";
+			xmlBuild += "<person>";
+			xmlBuild += "<firstname>" + obj.get("firstname") + "</firstname>";
+			xmlBuild += "</person>";
+
+			xmlBuild += "<measure>";
+			xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
+			xmlBuild += "<type>" + measureType + "</type>";
+			xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
+			xmlBuild += "<created>" + measureTarget.get("created") + "</created>";
+			xmlBuild += "</measure>";
+
+			xmlBuild += "<goal>";
+			xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
+			xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+			xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
+			xmlBuild += "<motivation>" + phrase + "</motivation>";
+			xmlBuild += "</goal>";
+			xmlBuild += "</verifyGoal>";
+
+		}
+		
+		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
+		String jsonPrettyPrintString = xmlJSONObj.toString(4);
+
+		System.out.println(jsonPrettyPrintString);
+
+		return Response.ok(jsonPrettyPrintString).build();
+		
+		/*if (goalTarget == null) {
 			System.out.println(measureName + " does not exist. I created a new goal");
 			
 			// II. POST PERSON/{IDPERSON}/GOAL --> SS
@@ -767,13 +818,13 @@ public class PersonResource {
 			
 			response = service.path(path).request(mediaType).post(Entity.json(inputGoalJSON));
 			
-			/*if (response.getStatus() != 201) {
+			if (response.getStatus() != 201) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
-			}*/
+			}
 		}
 		
 		System.out.println(measureName + " does exist. I verified a goal for a given measure");
@@ -856,7 +907,7 @@ public class PersonResource {
 		System.out.println(jsonPrettyPrintString);
 
 		return Response.ok(jsonPrettyPrintString).build();
-
+		*/
 	}
 
 	/***
