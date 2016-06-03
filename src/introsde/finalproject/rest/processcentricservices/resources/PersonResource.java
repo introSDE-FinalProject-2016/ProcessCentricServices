@@ -811,6 +811,15 @@ public class PersonResource {
 
 		obj = new JSONObject(result);
 
+		currentHealthObj = (JSONObject) obj.get("currentHealth");
+		measureArr = currentHealthObj.getJSONArray("measure");
+		for (int i = 0; i < measureArr.length(); i++) {
+			if (measureArr.getJSONObject(i).getString("name")
+					.equals(measureName)) {
+				measureTarget = measureArr.getJSONObject(i);
+			}
+		}
+		
 		goalsObj = (JSONObject) obj.get("goals");
 		goalArr = goalsObj.getJSONArray("goal");
 		for (int i = 0; i < goalArr.length(); i++) {
