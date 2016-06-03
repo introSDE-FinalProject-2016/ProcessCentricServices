@@ -767,13 +767,13 @@ public class PersonResource {
 			
 			response = service.path(path).request(mediaType).post(Entity.json(inputGoalJSON));
 			
-			if (response.getStatus() <= 201) {
+			/*if (response.getStatus() != 201) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
-			}
+			}*/
 		}
 		
 		System.out.println(measureName + " does exist. I verified a goal for a given measure");
@@ -796,7 +796,7 @@ public class PersonResource {
 
 		JSONObject obj2 = new JSONObject(rs.toString());
 		
-		if (resp.getStatusLine().getStatusCode() <= 201) {
+		if (resp.getStatusLine().getStatusCode() != 200) {
 			System.out
 					.println("Storage Service Error catch response.getStatus() != 200");
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
