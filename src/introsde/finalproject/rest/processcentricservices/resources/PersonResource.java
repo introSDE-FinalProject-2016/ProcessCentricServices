@@ -731,12 +731,12 @@ public class PersonResource {
 		String xmlBuild = "";
 
 		ClientConfig clientConfig = new ClientConfig();
-
 		Client client = ClientBuilder.newClient(clientConfig);
+		
 		WebTarget service = client.target(businessLogicServiceURL);
-
 		Response response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
+		
 		if (response.getStatus() != 200) {
 			System.out
 					.println("Business Logic Service Error catch response.getStatus() != 200");
@@ -748,7 +748,6 @@ public class PersonResource {
 		String result = response.readEntity(String.class);
 
 		JSONObject goalTarget = null;
-		JSONObject measureTarget = null;
 
 		JSONObject obj = new JSONObject(result);
 
@@ -764,19 +763,19 @@ public class PersonResource {
 
 			// II. POST PERSON/{IDPERSON}/GOAL --> SS
 			path = "/person/" + idPerson + "/goal";
-			service = client.target(storageServiceURL);
+			WebTarget service2 = client.target(storageServiceURL);
 
-			response = service
+			Response response2 = service2
 					.path(path)
 					.request()
 					.accept(mediaType)
-					.post(Entity.json(inputGoalJSON));
+					.post(Entity.json(inputGoalJSON), Response.class);
 			
-			if (response.getStatus() != 201) {
+			if (response2.getStatus() != 201) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-						.entity(externalErrorMessageSS(response.toString()))
+						.entity(externalErrorMessageSS(response2.toString()))
 						.build();
 			}
 			
@@ -804,10 +803,11 @@ public class PersonResource {
 			System.out
 					.println("Storage Service Error catch response.getStatus() != 200");
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity(externalErrorMessageSS(response.toString()))
+					.entity(externalErrorMessageSS(resp.toString()))
 					.build();
 		}
 
+		JSONObject measureTarget = null;
 		JSONObject currentHealthObj = (JSONObject) obj2.get("currentHealth");
 		JSONArray measureArr = currentHealthObj.getJSONArray("measure");
 		for (int i = 0; i < measureArr.length(); i++) {
@@ -817,11 +817,12 @@ public class PersonResource {
 			}
 		}
 		
-		goalsObj = (JSONObject) obj2.get("goals");
-		goalArr = goalsObj.getJSONArray("goal");
-		for (int i = 0; i < goalArr.length(); i++) {
-			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
-				goalTarget = goalArr.getJSONObject(i);
+		goalTarget = null;
+		JSONObject goalsObj2 = (JSONObject) obj2.get("goals");
+		JSONArray goalArr2 = goalsObj2.getJSONArray("goal");
+		for (int i = 0; i < goalArr2.length(); i++) {
+			if (goalArr2.getJSONObject(i).getString("type").equals(measureName)) {
+				goalTarget = goalArr2.getJSONObject(i);
 			}
 		}
 
