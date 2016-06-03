@@ -760,27 +760,25 @@ public class PersonResource {
 		}
 
 		if (goalTarget == null) {
-
+			System.out.println(measureName + " does not exist. I created a new goal");
+			
 			// II. POST PERSON/{IDPERSON}/GOAL --> SS
 			path = "/person/" + idPerson + "/goal";
-			WebTarget service2 = client.target(storageServiceURL);
-
-			Response response2 = service2
-					.path(path)
-					.request()
-					.accept(mediaType)
-					.post(Entity.json(inputGoalJSON), Response.class);
+			service = client.target(storageServiceURL);
 			
-			if (response2.getStatus() != 201) {
+			response = service.path(path).request(mediaType).post(Entity.json(inputGoalJSON));
+			
+			if (response.getStatus() != 201) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-						.entity(externalErrorMessageSS(response2.toString()))
+						.entity(externalErrorMessageSS(response.toString()))
 						.build();
 			}
-			
 		}
-
+		
+		System.out.println(measureName + " does exist. I verified a goal for a given measure");
+		
 		// III. GET PERSON/{IDPERSON} --> SS
 		path = "/person/" + idPerson;
 
