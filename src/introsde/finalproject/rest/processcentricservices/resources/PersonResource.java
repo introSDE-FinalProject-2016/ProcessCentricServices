@@ -734,8 +734,7 @@ public class PersonResource {
 		Client client = ClientBuilder.newClient(clientConfig);
 		
 		WebTarget service = client.target(businessLogicServiceURL);
-		Response response = service.path(path).request().accept(mediaType)
-				.get(Response.class);
+		Response response = service.path(path).request(mediaType).get(Response.class);
 		
 		if (response.getStatus() != 200) {
 			System.out
@@ -768,7 +767,7 @@ public class PersonResource {
 			
 			response = service.path(path).request(mediaType).post(Entity.json(inputGoalJSON));
 			
-			if (response.getStatus() != 201) {
+			if (response.getStatus() <= 201) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -797,7 +796,7 @@ public class PersonResource {
 
 		JSONObject obj2 = new JSONObject(rs.toString());
 		
-		if (resp.getStatusLine().getStatusCode() != 200) {
+		if (resp.getStatusLine().getStatusCode() <= 201) {
 			System.out
 					.println("Storage Service Error catch response.getStatus() != 200");
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -1074,8 +1073,7 @@ public class PersonResource {
 
 		Client client = ClientBuilder.newClient(clientConfig);
 		WebTarget service = client.target(processCentricServiceURL);
-		Response response = service.path(path).request().accept(mediaType)
-				.get(Response.class);
+		Response response = service.path(path).request(mediaType).get(Response.class);
 
 		String result = response.readEntity(String.class);
 		JSONObject obj = new JSONObject(result);
