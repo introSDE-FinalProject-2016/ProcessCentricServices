@@ -774,11 +774,11 @@ public class PersonResource {
 		}else{
 			System.out.println(measureName + "  exist!");
 			// II. GET /MEASURETYPES -> PCS
-			String measureType = getMeasureType(measureName);
+			//String measureType = getMeasureType(measureName);
 
 			// III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
-			String phrase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
-					measureName);
+			//String phrase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
+			//		measureName);
 			
 			xmlBuild = "<verifyGoal>";
 			xmlBuild += "<person>";
@@ -787,7 +787,7 @@ public class PersonResource {
 
 			xmlBuild += "<measure>";
 			xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
-			xmlBuild += "<type>" + measureType + "</type>";
+			//xmlBuild += "<type>" + measureType + "</type>";
 			xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
 			xmlBuild += "<created>" + measureTarget.get("created") + "</created>";
 			xmlBuild += "</measure>";
@@ -796,7 +796,7 @@ public class PersonResource {
 			xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
 			xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
 			xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
-			xmlBuild += "<motivation>" + phrase + "</motivation>";
+			//xmlBuild += "<motivation>" + phrase + "</motivation>";
 			xmlBuild += "</goal>";
 			xmlBuild += "</verifyGoal>";
 
