@@ -738,6 +738,7 @@ public class PersonResource {
 				.get(Response.class);
 
 		if (response.getStatus() != 200) {
+			System.out.println("Status: " + response.getStatus());
 			System.out
 					.println("Business Logic Service Error catch response.getStatus() != 200");
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -763,59 +764,59 @@ public class PersonResource {
 			System.out.println(measureName
 					+ " does not exist. I created a new goal");
 
-			// II. POST PERSON/{IDPERSON}/GOAL --> SS
+			// POST PERSON/{IDPERSON}/GOAL --> SS
 			path = "/person/" + idPerson + "/goal";
 			service = client.target(storageServiceURL);
 
-			response = service.path(path).request(mediaType)
-					.post(Entity.json(inputGoalJSON), Response.class);
-
-			if (response.getStatus() != 201) {
+			response = service
+					.path(path)
+					.request()
+					.accept(mediaType)
+					.post(Entity.entity(inputGoalJSON, mediaType),
+							Response.class);
+			
+			if (response.getStatus() != 201 || response.getStatus() != 200) {
+				System.out.println("Status: " + response.getStatus());
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
 			}
-			
+
 			result = response.readEntity(String.class);
 
 			obj = new JSONObject(result);
-			xmlBuild = "<gid>" + obj.get("gid") + "</gid>";
+			xmlBuild = "<gid>" + obj.toString() + "</gid>";
 
-		} /*else {
-			System.out.println(measureName + "  exist!");
-			// II. GET /MEASURETYPES -> PCS
-			// String measureType = getMeasureType(measureName);
-
-			// III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
-			// String phrase = getPhrase(goalTarget.getBoolean("achieved"),
-			// idPerson,
-			// measureName);
-
-			xmlBuild = "<verifyGoal>";
-			xmlBuild += "<person>";
-			xmlBuild += "<firstname>" + obj.get("firstname") + "</firstname>";
-			xmlBuild += "</person>";
-
-			xmlBuild += "<measure>";
-			xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
-			// xmlBuild += "<type>" + measureType + "</type>";
-			xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
-			xmlBuild += "<created>" + measureTarget.get("created")
-					+ "</created>";
-			xmlBuild += "</measure>";
-
-			xmlBuild += "<goal>";
-			xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
-			xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
-			xmlBuild += "<achieved>" + goalTarget.get("achieved")
-					+ "</achieved>";
-			// xmlBuild += "<motivation>" + phrase + "</motivation>";
-			xmlBuild += "</goal>";
-			xmlBuild += "</verifyGoal>";
-
-		}*/
+		} /*
+		 * else { System.out.println(measureName + "  exist!"); // II. GET
+		 * /MEASURETYPES -> PCS // String measureType =
+		 * getMeasureType(measureName);
+		 * 
+		 * // III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
+		 * // String phrase = getPhrase(goalTarget.getBoolean("achieved"), //
+		 * idPerson, // measureName);
+		 * 
+		 * xmlBuild = "<verifyGoal>"; xmlBuild += "<person>"; xmlBuild +=
+		 * "<firstname>" + obj.get("firstname") + "</firstname>"; xmlBuild +=
+		 * "</person>";
+		 * 
+		 * xmlBuild += "<measure>"; xmlBuild += "<name>" +
+		 * measureTarget.get("name") + "</name>"; // xmlBuild += "<type>" +
+		 * measureType + "</type>"; xmlBuild += "<value>" +
+		 * measureTarget.get("value") + "</value>"; xmlBuild += "<created>" +
+		 * measureTarget.get("created") + "</created>"; xmlBuild +=
+		 * "</measure>";
+		 * 
+		 * xmlBuild += "<goal>"; xmlBuild += "<name>" + goalTarget.get("type") +
+		 * "</name>"; xmlBuild += "<value>" + goalTarget.get("value") +
+		 * "</value>"; xmlBuild += "<achieved>" + goalTarget.get("achieved") +
+		 * "</achieved>"; // xmlBuild += "<motivation>" + phrase +
+		 * "</motivation>"; xmlBuild += "</goal>"; xmlBuild += "</verifyGoal>";
+		 * 
+		 * }
+		 */
 
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
