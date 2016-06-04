@@ -737,8 +737,10 @@ public class PersonResource {
 		Response response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
 
+		System.out.println("Status1: " + response.getStatus());
+		
 		if (response.getStatus() != 200) {
-			System.out.println("Status: " + response.getStatus());
+			System.out.println("Status1: " + response.getStatus());
 			System.out
 					.println("Business Logic Service Error catch response.getStatus() != 200");
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -764,9 +766,9 @@ public class PersonResource {
 			System.out.println(measureName
 					+ " does not exist. I created a new goal");
 
-			// POST PERSON/{IDPERSON}/GOAL --> SS
+			// POST PERSON/{IDPERSON}/GOAL --> BLS
 			path = "/person/" + idPerson + "/goal";
-			service = client.target(storageServiceURL);
+			service = client.target(businessLogicServiceURL);
 
 			response = service
 					.path(path)
@@ -774,25 +776,32 @@ public class PersonResource {
 					.accept(mediaType)
 					.post(Entity.entity(inputGoalJSON, mediaType),
 							Response.class);
+						
+			if (response.getStatus() != 200) {
+				System.out.println("Status2: " + response.getStatus());
+				System.out
+						.println("Business Logic Service Error catch response.getStatus() != 200");
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+						.entity(externalErrorMessageBLS(response.toString()))
+						.build();
+			}
 			
-			System.out.println("Status: " + response.getStatus());
+			System.out.println("Status2: " + response.getStatus());
 			result = response.readEntity(String.class);
 
 			obj = new JSONObject(result);
 			xmlBuild = "<gid>" + obj.toString() + "</gid>";
-			
-			/*
-			if (response.getStatus() != 201 || response.getStatus() != 200) {
-				System.out
-						.println("Storage Service Error catch response.getStatus() != 201");
-				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-						.entity(externalErrorMessageSS(response.toString()))
-						.build();
-			}*/
+		} 
+		
 
-			
+		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
+		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 
-		} /*
+		System.out.println(jsonPrettyPrintString);
+
+		return Response.ok(jsonPrettyPrintString).build();
+		
+		/*
 		 * else { System.out.println(measureName + "  exist!"); // II. GET
 		 * /MEASURETYPES -> PCS // String measureType =
 		 * getMeasureType(measureName);
@@ -821,12 +830,7 @@ public class PersonResource {
 		 * }
 		 */
 
-		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
-		String jsonPrettyPrintString = xmlJSONObj.toString(4);
-
-		System.out.println(jsonPrettyPrintString);
-
-		return Response.ok(jsonPrettyPrintString).build();
+		
 
 	}
 
