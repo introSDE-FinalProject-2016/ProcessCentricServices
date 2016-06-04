@@ -835,7 +835,7 @@ public class PersonResource {
 			}
 		}
 		
-		xmlBuild += "<verifyGoal>";
+		xmlBuild = "<verifyGoal>";
 			xmlBuild += "<person>" + obj.get("lastname") + ", " + obj.get("firstname") + "</person>";
 			xmlBuild += "<measure>" +
 							"<name>" + measureTarget.get("name") + "</name>"
