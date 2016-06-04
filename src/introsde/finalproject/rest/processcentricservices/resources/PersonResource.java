@@ -728,8 +728,6 @@ public class PersonResource {
 		// I. GET PERSON/{IDPERSON} --> BLS
 		String path = "/person/" + idPerson;
 
-		String xmlBuild = " ";
-
 		ClientConfig clientConfig = new ClientConfig();
 		Client client = ClientBuilder.newClient(clientConfig);
 
@@ -791,8 +789,9 @@ public class PersonResource {
 
 			System.out.println("Status2: " + response.getStatus());
 		}
-
-		return Response.ok(getPersonDetails(idPerson, measureName)).build();
+		
+		String xmlBuild = getPersonDetails(idPerson, measureName);
+		return Response.ok(xmlBuild).build();
 		// return Response.ok(result).build();
 	}
 
@@ -843,11 +842,9 @@ public class PersonResource {
 			}
 		}
 
-		String xmlBuild = "";
-		
-		xmlBuild = "<verify-Goal>";
+		String xmlBuild = " ";
 
-		xmlBuild += "<measure>";
+		xmlBuild = "<measure>";
 		xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
 		xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
 		xmlBuild += "</measure>";
@@ -858,11 +855,9 @@ public class PersonResource {
 		xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
 		xmlBuild += "</goal>";
 
-		xmlBuild += "</verify-Goal>";
-
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
-		
+		System.out.println(jsonPrettyPrintString);
 		return jsonPrettyPrintString;
 	}
 
