@@ -775,19 +775,22 @@ public class PersonResource {
 					.post(Entity.entity(inputGoalJSON, mediaType),
 							Response.class);
 			
+			System.out.println("Status: " + response.getStatus());
+			result = response.readEntity(String.class);
+
+			obj = new JSONObject(result);
+			xmlBuild = "<gid>" + obj.toString() + "</gid>";
+			
+			/*
 			if (response.getStatus() != 201 || response.getStatus() != 200) {
-				System.out.println("Status: " + response.getStatus());
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
-			}
+			}*/
 
-			result = response.readEntity(String.class);
-
-			obj = new JSONObject(result);
-			xmlBuild = "<gid>" + obj.toString() + "</gid>";
+			
 
 		} /*
 		 * else { System.out.println(measureName + "  exist!"); // II. GET
