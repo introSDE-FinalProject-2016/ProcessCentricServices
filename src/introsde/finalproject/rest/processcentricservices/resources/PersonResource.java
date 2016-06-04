@@ -747,7 +747,7 @@ public class PersonResource {
 		}
 
 		System.out.println("Status1: " + response.getStatus());
-		
+
 		String result = response.readEntity(String.class);
 
 		JSONObject obj = new JSONObject(result);
@@ -792,34 +792,40 @@ public class PersonResource {
 			System.out.println("Status2: " + response.getStatus());
 		}
 
-		// GET PERSON/{IDPERSON} --> BLS
-		path = "/person/" + idPerson;
+		return Response.ok(getPersonDetails(idPerson, measureName)).build();
+		// return Response.ok(result).build();
+	}
 
-		clientConfig = new ClientConfig();
-		client = ClientBuilder.newClient(clientConfig);
-		service = client.target(businessLogicServiceURL);
-		response = service.path(path).request().accept(mediaType)
+	/**
+	 * This method call readPersonDetails from BLS
+	 * 
+	 * @return JSONObject
+	 */
+	private String getPersonDetails(int idPerson, String measureName) {
+		
+		// GET PERSON/{IDPERSON} --> BLS
+		String path = "/person/" + idPerson;
+
+		ClientConfig clientConfig = new ClientConfig();
+		Client client = ClientBuilder.newClient(clientConfig);
+		WebTarget service = client.target(businessLogicServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
 
 		if (response.getStatus() != 200) {
-			System.out.println("Status3: " + response.getStatus());
+			System.out.println("Status: " + response.getStatus());
 			System.out
 					.println("Business Logic Service Error catch response.getStatus() != 200");
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity(externalErrorMessageBLS(response.toString()))
-					.build();
 		}
 
-		System.out.println("Status3: " + response.getStatus());
-		
-		result = response.readEntity(String.class);
-		
-		
-		JSONObject obj3 = new JSONObject(result);
+		System.out.println("Status: " + response.getStatus());
+
+		String result = response.readEntity(String.class);
+
+		JSONObject obj = new JSONObject(result);
 
 		JSONObject measureTarget = null;
-
-		JSONObject currentMeasureObj = (JSONObject) obj3.get("currentHealth");
+		JSONObject currentMeasureObj = (JSONObject) obj.get("currentHealth");
 		JSONArray measureArr = currentMeasureObj.getJSONArray("measure");
 		for (int i = 0; i < measureArr.length(); i++) {
 			if (measureArr.getJSONObject(i).getString("name")
@@ -828,16 +834,18 @@ public class PersonResource {
 			}
 		}
 
-		goalTarget = null;
-		JSONObject goalObj3 = (JSONObject) obj3.get("goals");
-		JSONArray goalArr3 = goalObj3.getJSONArray("goal");
-		for (int i = 0; i < goalArr3.length(); i++) {
-			if (goalArr3.getJSONObject(i).getString("type").equals(measureName)) {
-				goalTarget = goalArr3.getJSONObject(i);
+		JSONObject goalTarget = null;
+		JSONObject goalObj = (JSONObject) obj.get("goals");
+		JSONArray goalArr = goalObj.getJSONArray("goal");
+		for (int i = 0; i < goalArr.length(); i++) {
+			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
+				goalTarget = goalArr.getJSONObject(i);
 			}
 		}
 
-		xmlBuild = "<verifyGoal>";
+		String xmlBuild = "";
+		
+		xmlBuild = "<verify-Goal>";
 
 		xmlBuild += "<measure>";
 		xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
@@ -850,19 +858,14 @@ public class PersonResource {
 		xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
 		xmlBuild += "</goal>";
 
-		xmlBuild += "</verifyGoal>";
+		xmlBuild += "</verify-Goal>";
 
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
-
-		System.out.println(jsonPrettyPrintString);
-
-		return Response.ok(jsonPrettyPrintString).build();
 		
-		//return Response.ok(result).build();
+		return jsonPrettyPrintString;
 	}
 
-	
 	/***
 	 * GET /person/{idPerson}/comparisonInfo/{measureName} VI Integration Logic
 	 * 
