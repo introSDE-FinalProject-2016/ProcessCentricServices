@@ -713,11 +713,12 @@ public class PersonResource {
 	 * 
 	 * @return
 	 */
-	@GET
+	@POST
 	@Path("{pid}/verifyGoal/{measureName}")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
-	public Response verifyGoal(@PathParam("pid") int idPerson, @PathParam("measureName") String measureName)
+	public Response verifyGoal(@PathParam("pid") int idPerson,
+			@PathParam("measureName") String measureName, String inputGoalJSON)
 			throws Exception {
 
 		System.out
@@ -731,10 +732,11 @@ public class PersonResource {
 
 		ClientConfig clientConfig = new ClientConfig();
 		Client client = ClientBuilder.newClient(clientConfig);
-		
+
 		WebTarget service = client.target(businessLogicServiceURL);
-		Response response = service.path(path).request(mediaType).get(Response.class);
-		
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+
 		if (response.getStatus() != 200) {
 			System.out
 					.println("Business Logic Service Error catch response.getStatus() != 200");
@@ -745,79 +747,29 @@ public class PersonResource {
 
 		String result = response.readEntity(String.class);
 
-		JSONObject goalTarget = null;
-		JSONObject measureTarget = null;
-
 		JSONObject obj = new JSONObject(result);
 
-		JSONObject currentHealthObj = (JSONObject) obj.get("currentHealth");
-		JSONArray measureArr = currentHealthObj.getJSONArray("measure");
-		for (int i = 0; i < measureArr.length(); i++) {
-			if (measureArr.getJSONObject(i).getString("name")
-					.equals(measureName)) {
-				measureTarget = measureArr.getJSONObject(i);
-			}
-		}
-		
-		JSONObject goalsObj = (JSONObject) obj.get("goals");
-		JSONArray goalArr = goalsObj.getJSONArray("goal");
+		JSONObject goalTarget = null;
+		JSONObject goalObj = (JSONObject) obj.get("goals");
+		JSONArray goalArr = goalObj.getJSONArray("goal");
 		for (int i = 0; i < goalArr.length(); i++) {
 			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
 				goalTarget = goalArr.getJSONObject(i);
 			}
 		}
-		
-		if(goalTarget ==  null){
-			System.out.println(measureName + " does exist!");
-			xmlBuild = "<goal>" + measureName + " doesn't exist!" + "</goal>";
-			
-		}else{
-			System.out.println(measureName + "  exist!");
-			// II. GET /MEASURETYPES -> PCS
-			//String measureType = getMeasureType(measureName);
 
-			// III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
-			//String phrase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
-			//		measureName);
-			
-			xmlBuild = "<verifyGoal>";
-			xmlBuild += "<person>";
-			xmlBuild += "<firstname>" + obj.get("firstname") + "</firstname>";
-			xmlBuild += "</person>";
+		// check if goal target exists
+		if (goalTarget == null) {
+			System.out.println(measureName
+					+ " does not exist. I created a new goal");
 
-			xmlBuild += "<measure>";
-			xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
-			//xmlBuild += "<type>" + measureType + "</type>";
-			xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
-			xmlBuild += "<created>" + measureTarget.get("created") + "</created>";
-			xmlBuild += "</measure>";
-
-			xmlBuild += "<goal>";
-			xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
-			xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
-			xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
-			//xmlBuild += "<motivation>" + phrase + "</motivation>";
-			xmlBuild += "</goal>";
-			xmlBuild += "</verifyGoal>";
-
-		}
-		
-		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
-		String jsonPrettyPrintString = xmlJSONObj.toString(4);
-
-		System.out.println(jsonPrettyPrintString);
-
-		return Response.ok(jsonPrettyPrintString).build();
-		
-		/*if (goalTarget == null) {
-			System.out.println(measureName + " does not exist. I created a new goal");
-			
 			// II. POST PERSON/{IDPERSON}/GOAL --> SS
 			path = "/person/" + idPerson + "/goal";
 			service = client.target(storageServiceURL);
-			
-			response = service.path(path).request(mediaType).post(Entity.json(inputGoalJSON));
-			
+
+			response = service.path(path).request(mediaType)
+					.post(Entity.json(inputGoalJSON), Response.class);
+
 			if (response.getStatus() != 201) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 201");
@@ -825,89 +777,53 @@ public class PersonResource {
 						.entity(externalErrorMessageSS(response.toString()))
 						.build();
 			}
-		}
-		
-		System.out.println(measureName + " does exist. I verified a goal for a given measure");
-		
-		// III. GET PERSON/{IDPERSON} --> SS
-		path = "/person/" + idPerson;
+			
+			result = response.readEntity(String.class);
 
-		DefaultHttpClient httpClient = new DefaultHttpClient();
-		HttpGet request = new HttpGet(storageServiceURL + path);
-		HttpResponse resp = httpClient.execute(request);
+			obj = new JSONObject(result);
+			xmlBuild = "<gid>" + obj.get("gid") + "</gid>";
 
-		BufferedReader rd = new BufferedReader(new InputStreamReader(resp
-				.getEntity().getContent()));
+		} /*else {
+			System.out.println(measureName + "  exist!");
+			// II. GET /MEASURETYPES -> PCS
+			// String measureType = getMeasureType(measureName);
 
-		StringBuffer rs = new StringBuffer();
-		String line = "";
-		while ((line = rd.readLine()) != null) {
-			rs.append(line);
-		}
+			// III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
+			// String phrase = getPhrase(goalTarget.getBoolean("achieved"),
+			// idPerson,
+			// measureName);
 
-		JSONObject obj2 = new JSONObject(rs.toString());
-		
-		if (resp.getStatusLine().getStatusCode() != 200) {
-			System.out
-					.println("Storage Service Error catch resp.getStatusLine().getStatusCode() != 200");
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity(externalErrorMessageSS(resp.toString()))
-					.build();
-		}
+			xmlBuild = "<verifyGoal>";
+			xmlBuild += "<person>";
+			xmlBuild += "<firstname>" + obj.get("firstname") + "</firstname>";
+			xmlBuild += "</person>";
 
-		JSONObject measureTarget = null;
-		JSONObject currentHealthObj = (JSONObject) obj2.get("currentHealth");
-		JSONArray measureArr = currentHealthObj.getJSONArray("measure");
-		for (int i = 0; i < measureArr.length(); i++) {
-			if (measureArr.getJSONObject(i).getString("name")
-					.equals(measureName)) {
-				measureTarget = measureArr.getJSONObject(i);
-			}
-		}
-		
-		goalTarget = null;
-		JSONObject goalsObj2 = (JSONObject) obj2.get("goals");
-		JSONArray goalArr2 = goalsObj2.getJSONArray("goal");
-		for (int i = 0; i < goalArr2.length(); i++) {
-			if (goalArr2.getJSONObject(i).getString("type").equals(measureName)) {
-				goalTarget = goalArr2.getJSONObject(i);
-			}
-		}
+			xmlBuild += "<measure>";
+			xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
+			// xmlBuild += "<type>" + measureType + "</type>";
+			xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
+			xmlBuild += "<created>" + measureTarget.get("created")
+					+ "</created>";
+			xmlBuild += "</measure>";
 
-		// IV. GET /MEASURETYPES -> PCS
-		String measureType = getMeasureType(measureName);
+			xmlBuild += "<goal>";
+			xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
+			xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+			xmlBuild += "<achieved>" + goalTarget.get("achieved")
+					+ "</achieved>";
+			// xmlBuild += "<motivation>" + phrase + "</motivation>";
+			xmlBuild += "</goal>";
+			xmlBuild += "</verifyGoal>";
 
-		// V. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
-		String phrase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
-				measureName);
-		
-		xmlBuild = "<verifyGoal>";
-		xmlBuild += "<person>";
-		xmlBuild += "<firstname>" + obj2.get("firstname") + "</firstname>";
-		xmlBuild += "</person>";
+		}*/
 
-		xmlBuild += "<measure>";
-		xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
-		xmlBuild += "<type>" + measureType + "</type>";
-		xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
-		xmlBuild += "<created>" + measureTarget.get("created") + "</created>";
-		xmlBuild += "</measure>";
-
-		xmlBuild += "<goal>";
-		xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
-		xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
-		xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
-		xmlBuild += "<motivation>" + phrase + "</motivation>";
-		xmlBuild += "</goal>";
-		xmlBuild += "</verifyGoal>";
-		
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 
 		System.out.println(jsonPrettyPrintString);
 
 		return Response.ok(jsonPrettyPrintString).build();
-		*/
+
 	}
 
 	/***
@@ -1124,7 +1040,8 @@ public class PersonResource {
 
 		Client client = ClientBuilder.newClient(clientConfig);
 		WebTarget service = client.target(processCentricServiceURL);
-		Response response = service.path(path).request(mediaType).get(Response.class);
+		Response response = service.path(path).request(mediaType)
+				.get(Response.class);
 
 		String result = response.readEntity(String.class);
 		JSONObject obj = new JSONObject(result);
