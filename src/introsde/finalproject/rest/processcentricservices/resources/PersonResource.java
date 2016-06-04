@@ -768,6 +768,9 @@ public class PersonResource {
 
 			// POST PERSON/{IDPERSON}/GOAL --> BLS
 			path = "/person/" + idPerson + "/goal";
+			
+			clientConfig = new ClientConfig();
+			client = ClientBuilder.newClient(clientConfig);
 			service = client.target(businessLogicServiceURL);
 
 			response = service
@@ -792,6 +795,8 @@ public class PersonResource {
 		// GET PERSON/{IDPERSON} --> BLS
 		path = "/person/" + idPerson;
 		
+		clientConfig = new ClientConfig();
+		client = ClientBuilder.newClient(clientConfig);
 		service = client.target(businessLogicServiceURL);
 		response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
@@ -830,13 +835,13 @@ public class PersonResource {
 			}
 		}
 		
-		xmlBuild = "<verifyGoal>";
-			xmlBuild += "<person>" + obj.getString("lastname") + ", " + obj.getString("firstname") + "</person>";
+		xmlBuild += "<verifyGoal>";
+			xmlBuild += "<person>" + obj.get("lastname") + ", " + obj.get("firstname") + "</person>";
 			xmlBuild += "<measure>" +
-							"<name>" + measureTarget.getString("name") + "</name>"
+							"<name>" + measureTarget.get("name") + "</name>"
 						+ "</measure>";
 			xmlBuild += "<goal>" +
-					"<name>" + goalTarget.getString("type") + "</name>"
+					"<name>" + goalTarget.get("type") + "</name>"
 				+ "</goal>";
 		xmlBuild += "</verifyGoal>";
 		
