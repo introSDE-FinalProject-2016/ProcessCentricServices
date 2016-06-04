@@ -715,8 +715,8 @@ public class PersonResource {
 	 */
 	@POST
 	@Path("{pid}/verifyGoal/{measureName}")
+	@Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
 	@Produces(MediaType.APPLICATION_JSON)
-	@Consumes(MediaType.APPLICATION_JSON)
 	public Response verifyGoal(@PathParam("pid") int idPerson,
 			@PathParam("measureName") String measureName, String inputGoalJSON)
 			throws Exception {
@@ -737,8 +737,6 @@ public class PersonResource {
 		Response response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
 
-		System.out.println("Status1: " + response.getStatus());
-
 		if (response.getStatus() != 200) {
 			System.out.println("Status1: " + response.getStatus());
 			System.out
@@ -748,6 +746,8 @@ public class PersonResource {
 					.build();
 		}
 
+		System.out.println("Status1: " + response.getStatus());
+		
 		String result = response.readEntity(String.class);
 
 		JSONObject obj = new JSONObject(result);
@@ -768,7 +768,7 @@ public class PersonResource {
 
 			// POST PERSON/{IDPERSON}/GOAL --> BLS
 			path = "/person/" + idPerson + "/goal";
-			
+
 			clientConfig = new ClientConfig();
 			client = ClientBuilder.newClient(clientConfig);
 			service = client.target(businessLogicServiceURL);
@@ -794,15 +794,13 @@ public class PersonResource {
 
 		// GET PERSON/{IDPERSON} --> BLS
 		path = "/person/" + idPerson;
-		
+
 		clientConfig = new ClientConfig();
 		client = ClientBuilder.newClient(clientConfig);
 		service = client.target(businessLogicServiceURL);
 		response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
-		
-		System.out.println("Status3: " + response.getStatus());
-		
+
 		if (response.getStatus() != 200) {
 			System.out.println("Status3: " + response.getStatus());
 			System.out
@@ -812,6 +810,8 @@ public class PersonResource {
 					.build();
 		}
 
+		System.out.println("Status3: " + response.getStatus());
+		
 		result = response.readEntity(String.class);
 		obj = new JSONObject(result);
 
@@ -834,56 +834,31 @@ public class PersonResource {
 				goalTarget = goalArr.getJSONObject(i);
 			}
 		}
-		
+
 		xmlBuild = "<verifyGoal>";
-			xmlBuild += "<person>" + obj.get("lastname") + ", " + obj.get("firstname") + "</person>";
-			xmlBuild += "<measure>" +
-							"<name>" + measureTarget.get("name") + "</name>"
-						+ "</measure>";
-			xmlBuild += "<goal>" +
-					"<name>" + goalTarget.get("type") + "</name>"
-				+ "</goal>";
+
+		xmlBuild += "<measure>";
+		xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
+		xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
+		xmlBuild += "</measure>";
+
+		xmlBuild += "<goal>";
+		xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
+		xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+		xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
+		xmlBuild += "</goal>";
+
 		xmlBuild += "</verifyGoal>";
-		
-		
+
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 
 		System.out.println(jsonPrettyPrintString);
 
 		return Response.ok(jsonPrettyPrintString).build();
-
-		/*
-		 * else { System.out.println(measureName + "  exist!"); // II. GET
-		 * /MEASURETYPES -> PCS // String measureType =
-		 * getMeasureType(measureName);
-		 * 
-		 * // III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
-		 * // String phrase = getPhrase(goalTarget.getBoolean("achieved"), //
-		 * idPerson, // measureName);
-		 * 
-		 * xmlBuild = "<verifyGoal>"; xmlBuild += "<person>"; xmlBuild +=
-		 * "<firstname>" + obj.get("firstname") + "</firstname>"; xmlBuild +=
-		 * "</person>";
-		 * 
-		 * xmlBuild += "<measure>"; xmlBuild += "<name>" +
-		 * measureTarget.get("name") + "</name>"; // xmlBuild += "<type>" +
-		 * measureType + "</type>"; xmlBuild += "<value>" +
-		 * measureTarget.get("value") + "</value>"; xmlBuild += "<created>" +
-		 * measureTarget.get("created") + "</created>"; xmlBuild +=
-		 * "</measure>";
-		 * 
-		 * xmlBuild += "<goal>"; xmlBuild += "<name>" + goalTarget.get("type") +
-		 * "</name>"; xmlBuild += "<value>" + goalTarget.get("value") +
-		 * "</value>"; xmlBuild += "<achieved>" + goalTarget.get("achieved") +
-		 * "</achieved>"; // xmlBuild += "<motivation>" + phrase +
-		 * "</motivation>"; xmlBuild += "</goal>"; xmlBuild += "</verifyGoal>";
-		 * 
-		 * }
-		 */
-
 	}
 
+	
 	/***
 	 * GET /person/{idPerson}/comparisonInfo/{measureName} VI Integration Logic
 	 * 
