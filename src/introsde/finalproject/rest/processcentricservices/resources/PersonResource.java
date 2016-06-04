@@ -708,8 +708,7 @@ public class PersonResource {
 	 * 
 	 * verifyGoal(idPerson, inputGoalJSON, measureName) method calls the
 	 * following methods: *readPersonDetails(idPerson) --> BLS
-	 * *createGoal(idPerson, inputGoalJSON) --> SS *getPerson(idPerson) --> SS
-	 * *readMotivationGoal(idPerson, measureName) --> BLS
+	 * *getMotivationGoal(idPerson, measureName) --> BLS *getMeasureTypes() --> PCS
 	 * 
 	 * @return
 	 */
@@ -727,6 +726,8 @@ public class PersonResource {
 		// I. GET PERSON/{IDPERSON} --> BLS
 		String path = "/person/" + idPerson;
 
+		String xmlBuild = " ";
+		
 		ClientConfig clientConfig = new ClientConfig();
 		Client client = ClientBuilder.newClient(clientConfig);
 
@@ -747,17 +748,7 @@ public class PersonResource {
 
 		JSONObject obj = new JSONObject(result);
 
-		JSONObject measureTarget = null;
 		JSONObject goalTarget = null;
-
-		JSONObject currentMeasureObj = (JSONObject) obj.get("currentHealth");
-		JSONArray measureArr = currentMeasureObj.getJSONArray("measure");
-		for (int i = 0; i < measureArr.length(); i++) {
-			if (measureArr.getJSONObject(i).getString("name")
-					.equals(measureName)) {
-				measureTarget = measureArr.getJSONObject(i);
-			}
-		}
 
 		JSONObject goalObj = (JSONObject) obj.get("goals");
 		JSONArray goalArr = goalObj.getJSONArray("goal");
@@ -767,41 +758,36 @@ public class PersonResource {
 			}
 		}
 
-		System.out.println("Measure:");
-		System.out.println("Name: " + measureTarget.get("name"));
-		System.out.println("Value: " + measureTarget.get("value"));
-
-		System.out.println("Goal:");
-		System.out.println("Name: " + goalTarget.get("type"));
-		System.out.println("Value: " + goalTarget.get("value"));
-		System.out.println("Achieved: " + goalTarget.get("achieved"));
-
-		// II. GET /MEASURETYPES
-		String measureType = getMeasureType(measureName);
-
-		// III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
-		String phase = getMotivationGoal(idPerson, measureName);
-
-		String xmlBuild = " ";
-
-		xmlBuild = "<verifyGoal>";
+		if(goalTarget == null){
+			xmlBuild = "<goal>" + measureName + " does not exist. You have to push a createGoal button" +"</goal>";
 		
-		xmlBuild += "<person>" + obj.get("lastname") + ", " + obj.get("firstname") + "</person>";
-		
-		xmlBuild += "<measure>";
-		xmlBuild += "<name>" + measureTarget.get("name") + "</name>";
-		xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
-		xmlBuild += "<type>" + measureType + "</type>";
-		xmlBuild += "</measure>";
+		}else{
+			System.out.println("Goal:");
+			System.out.println("Name: " + goalTarget.get("type"));
+			System.out.println("Value: " + goalTarget.get("value"));
+			System.out.println("Achieved: " + goalTarget.get("achieved"));
 
-		xmlBuild += "<goal>";
-		xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
-		xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
-		xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
-		xmlBuild += "<motivation>" + phase + "</motivation>";
-		xmlBuild += "</goal>";
-		
-		xmlBuild += "</verifyGoal>";
+			// II. GET /MEASURETYPES
+			String measureType = getMeasureType(measureName);
+
+			// III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
+			String phase = getPhrase(goalTarget.getBoolean("achieved"), idPerson, measureName);
+
+			xmlBuild = "<verifyGoal>";
+			
+			xmlBuild += "<person>" + obj.get("lastname") + ", " + obj.get("firstname") + "</person>";
+			
+			xmlBuild += "<goal>";
+			xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
+			xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+			xmlBuild += "<type>" + measureType + "</type>";
+			xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
+			xmlBuild += "<motivation>" + phase + "</motivation>";
+			xmlBuild += "</goal>";
+			
+			xmlBuild += "</verifyGoal>";
+
+		}
 		
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
