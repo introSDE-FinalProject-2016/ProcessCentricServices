@@ -738,7 +738,7 @@ public class PersonResource {
 				.get(Response.class);
 
 		System.out.println("Status1: " + response.getStatus());
-		
+
 		if (response.getStatus() != 200) {
 			System.out.println("Status1: " + response.getStatus());
 			System.out
@@ -776,7 +776,7 @@ public class PersonResource {
 					.accept(mediaType)
 					.post(Entity.entity(inputGoalJSON, mediaType),
 							Response.class);
-						
+
 			if (response.getStatus() != 200) {
 				System.out.println("Status2: " + response.getStatus());
 				System.out
@@ -785,22 +785,69 @@ public class PersonResource {
 						.entity(externalErrorMessageBLS(response.toString()))
 						.build();
 			}
-			
+
 			System.out.println("Status2: " + response.getStatus());
-			result = response.readEntity(String.class);
+		}
 
-			obj = new JSONObject(result);
-			xmlBuild = "<gid>" + obj.toString() + "</gid>";
-		} 
+		// GET PERSON/{IDPERSON} --> BLS
+		path = "/person/" + idPerson;
 		
+		service = client.target(businessLogicServiceURL);
+		response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		
+		System.out.println("Status3: " + response.getStatus());
+		
+		if (response.getStatus() != 200) {
+			System.out.println("Status3: " + response.getStatus());
+			System.out
+					.println("Business Logic Service Error catch response.getStatus() != 200");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(externalErrorMessageBLS(response.toString()))
+					.build();
+		}
 
+		result = response.readEntity(String.class);
+		obj = new JSONObject(result);
+
+		JSONObject measureTarget = null;
+
+		JSONObject currentMeasureObj = (JSONObject) obj.get("currentHealth");
+		JSONArray measureArr = currentMeasureObj.getJSONArray("measure");
+		for (int i = 0; i < measureArr.length(); i++) {
+			if (measureArr.getJSONObject(i).getString("name")
+					.equals(measureName)) {
+				measureTarget = measureArr.getJSONObject(i);
+			}
+		}
+
+		goalTarget = null;
+		goalObj = (JSONObject) obj.get("goals");
+		goalArr = goalObj.getJSONArray("goal");
+		for (int i = 0; i < goalArr.length(); i++) {
+			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
+				goalTarget = goalArr.getJSONObject(i);
+			}
+		}
+		
+		xmlBuild = "<verifyGoal>";
+			xmlBuild += "<person>" + obj.getString("lastname") + ", " + obj.getString("firstname") + "</person>";
+			xmlBuild += "<measure>" +
+							"<name>" + measureTarget.getString("name") + "</name>"
+						+ "</measure>";
+			xmlBuild += "<goal>" +
+					"<name>" + goalTarget.getString("type") + "</name>"
+				+ "</goal>";
+		xmlBuild += "</verifyGoal>";
+		
+		
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 
 		System.out.println(jsonPrettyPrintString);
 
 		return Response.ok(jsonPrettyPrintString).build();
-		
+
 		/*
 		 * else { System.out.println(measureName + "  exist!"); // II. GET
 		 * /MEASURETYPES -> PCS // String measureType =
@@ -829,8 +876,6 @@ public class PersonResource {
 		 * 
 		 * }
 		 */
-
-		
 
 	}
 
