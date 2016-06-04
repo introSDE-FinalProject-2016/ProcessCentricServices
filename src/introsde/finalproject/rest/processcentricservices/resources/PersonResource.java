@@ -842,6 +842,15 @@ public class PersonResource {
 			}
 		}
 
+		System.out.println("Measure:");
+		System.out.println("Name: " + measureTarget.get("name"));
+		System.out.println("Value: " + measureTarget.get("value"));
+		
+		System.out.println("Goal:");
+		System.out.println("Name: " + goalTarget.get("type"));
+		System.out.println("Value: " + goalTarget.get("value"));
+		System.out.println("Achieved: " + goalTarget.get("achieved"));
+		
 		String xmlBuild = " ";
 
 		xmlBuild = "<measure>";
