@@ -821,7 +821,7 @@ public class PersonResource {
 
 		String result = response.readEntity(String.class);
 
-		JSONObject obj = new JSONObject(result);
+/*		JSONObject obj = new JSONObject(result);
 
 		JSONObject measureTarget = null;
 		JSONObject currentMeasureObj = (JSONObject) obj.get("currentHealth");
@@ -867,7 +867,9 @@ public class PersonResource {
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 		System.out.println(jsonPrettyPrintString);
-		return jsonPrettyPrintString;
+		*/
+		System.out.println(result);
+		return result;
 	}
 
 	/***
