@@ -815,11 +815,11 @@ public class PersonResource {
 		result = response.readEntity(String.class);
 		
 		
-		obj = new JSONObject(result);
+		JSONObject obj3 = new JSONObject(result);
 
 		JSONObject measureTarget = null;
 
-		JSONObject currentMeasureObj = (JSONObject) obj.get("currentHealth");
+		JSONObject currentMeasureObj = (JSONObject) obj3.get("currentHealth");
 		JSONArray measureArr = currentMeasureObj.getJSONArray("measure");
 		for (int i = 0; i < measureArr.length(); i++) {
 			if (measureArr.getJSONObject(i).getString("name")
@@ -829,11 +829,11 @@ public class PersonResource {
 		}
 
 		goalTarget = null;
-		goalObj = (JSONObject) obj.get("goals");
-		goalArr = goalObj.getJSONArray("goal");
-		for (int i = 0; i < goalArr.length(); i++) {
-			if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
-				goalTarget = goalArr.getJSONObject(i);
+		JSONObject goalObj3 = (JSONObject) obj3.get("goals");
+		JSONArray goalArr3 = goalObj3.getJSONArray("goal");
+		for (int i = 0; i < goalArr3.length(); i++) {
+			if (goalArr3.getJSONObject(i).getString("type").equals(measureName)) {
+				goalTarget = goalArr3.getJSONObject(i);
 			}
 		}
 
