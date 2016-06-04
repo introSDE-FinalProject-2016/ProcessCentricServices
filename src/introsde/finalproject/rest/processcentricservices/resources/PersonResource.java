@@ -807,7 +807,7 @@ public class PersonResource {
 
 		ClientConfig clientConfig = new ClientConfig();
 		Client client = ClientBuilder.newClient(clientConfig);
-		WebTarget service = client.target(businessLogicServiceURL);
+		WebTarget service = client.target(storageServiceURL);
 		Response response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
 
