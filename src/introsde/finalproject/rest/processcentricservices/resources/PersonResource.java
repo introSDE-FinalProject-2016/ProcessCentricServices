@@ -813,6 +813,8 @@ public class PersonResource {
 		System.out.println("Status3: " + response.getStatus());
 		
 		result = response.readEntity(String.class);
+		
+	/*	
 		obj = new JSONObject(result);
 
 		JSONObject measureTarget = null;
@@ -855,7 +857,9 @@ public class PersonResource {
 
 		System.out.println(jsonPrettyPrintString);
 
-		return Response.ok(jsonPrettyPrintString).build();
+		return Response.ok(jsonPrettyPrintString).build();*/
+		
+		return Response.ok(result).build();
 	}
 
 	
