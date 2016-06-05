@@ -1095,4 +1095,84 @@ public class PersonResource {
 
 		return Response.ok(jsonPrettyPrintString).build();
 	}
+	
+	
+	/**
+	 * GET /person/{idPerson}/checkNewGoal/{gid} VIII Integration Logic
+	 * 
+	 * CheckNewGoal(idPerson, idGoal) method calls the following methods:
+	 * *readPersonDetails(idPerson) --> BLS 
+	 * *readMeasureTypes() --> PCS 
+	 * 
+	 * @param idPerson
+	 * @param idMeasure
+	 * @return
+	 * @throws Exception
+	 */
+	@GET
+	@Path("{pid}/checkNewGoal/{gid}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response checkNewGoal(@PathParam("pid") int idPerson,
+			@PathParam("gid") int idGoal) throws Exception {
+
+		System.out
+				.println("checkNewGoal: Seventh integration logic which calls 2 services "
+						+ "from Business Logic Services in Process Centric Services...");
+
+		// I. GET PERSON/{IDPERSON} --> BLS
+		String path = "/person/" + idPerson;
+
+		String xmlBuild = "";
+
+		ClientConfig clientConfig = new ClientConfig();
+
+		Client client = ClientBuilder.newClient(clientConfig);
+		WebTarget service = client.target(businessLogicServiceURL);
+
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		if (response.getStatus() != 200) {
+			System.out
+					.println("Business Logic Service Error catch response.getStatus() != 200");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(externalErrorMessageBLS(response.toString()))
+					.build();
+		}
+
+		String result = response.readEntity(String.class);
+
+		JSONObject goalTarget = null;
+
+		JSONObject obj = new JSONObject(result);
+
+		// check if list current goals contains the goal target
+		JSONObject goalsObj = (JSONObject) obj.get("goals");
+		JSONArray goalArr = goalsObj.getJSONArray("goal");
+		for (int i = 0; i < goalArr.length(); i++) {
+			if (goalArr.getJSONObject(i).get("gid")
+					.equals(idGoal)) {
+				goalTarget = goalArr.getJSONObject(i);
+			}
+		}
+
+		// II. GET /MEASURETYPES --> PCS
+		String measureType = getMeasureType(goalTarget.getString("type"));
+
+		xmlBuild = "<newGoal>";
+		xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
+		xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+		xmlBuild += "<type>" + measureType + "</type>";
+		xmlBuild += "<startDateGoal>" + goalTarget.get("startDateGoal") + "</startDateGoal>";
+		xmlBuild += "<endDateGoal>" + goalTarget.get("endDateGoal") + "</endDateGoal>";
+		xmlBuild += "<achieved>" + goalTarget.get("achieved") + "</achieved>";
+		xmlBuild += "</newGoal>";
+		
+		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
+		String jsonPrettyPrintString = xmlJSONObj.toString(4);
+
+		System.out.println(jsonPrettyPrintString);
+
+		return Response.ok(jsonPrettyPrintString).build();
+	}
 }
