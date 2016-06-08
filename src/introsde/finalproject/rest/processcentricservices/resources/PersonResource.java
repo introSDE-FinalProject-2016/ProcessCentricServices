@@ -706,10 +706,10 @@ public class PersonResource {
 	/**
 	 * GET /person/{idPerson}/verifyGoal/{measureName} V Integration Logic
 	 * 
-	 * verifyGoal(idPerson, inputGoalJSON, measureName) method calls the
+	 * verifyGoal(idPerson, measureName) method calls the
 	 * following methods: *readPersonDetails(idPerson) --> BLS
 	 * *getMotivationGoal(idPerson, measureName) --> BLS *getMeasureTypes() -->
-	 * PCS
+	 * PCS *getPicture() --> SS
 	 * 
 	 * @return
 	 */
