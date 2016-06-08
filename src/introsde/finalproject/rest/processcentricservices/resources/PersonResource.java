@@ -823,7 +823,7 @@ public class PersonResource {
 				xmlBuild += "<achieved>" + goalTarget.get("achieved")
 					+ "</achieved>";
 				xmlBuild += "<motivation>" + phase + "</motivation>";
-				xmlBuild += "<picture>" + pictureName + "</picture>";
+				xmlBuild += "<picture>" + pictureUrl + "</picture>";
 			xmlBuild += "</goal>";
 
 			xmlBuild += "</verifyGoal>";
