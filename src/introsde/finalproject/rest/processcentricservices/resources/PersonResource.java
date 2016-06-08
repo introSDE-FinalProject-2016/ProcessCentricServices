@@ -783,9 +783,11 @@ public class PersonResource {
 			service = client.target(storageServiceURL);
 			response = service.path(path).request().accept(mediaType)
 					.get(Response.class);
-
+			
+			System.out.println("Status1: " + response.getStatus());
+			
 			if (response.getStatus() != 200) {
-				System.out.println("Status: " + response.getStatus());
+				System.out.println("Status2: " + response.getStatus());
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 200");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -793,11 +795,16 @@ public class PersonResource {
 						.build();
 			}
 
+			
 			result = response.readEntity(String.class);
-
+			System.out.println(result);
+			
 			obj = new JSONObject(result);
+			
 			JSONObject pictureObj = (JSONObject) obj.get("picture");
 			String pictureUrl = pictureObj.getString("thumbUrl");
+			System.out.println("pictureURL: " + pictureUrl);
+			
 			//String pictureName = pictureObj.getString("random_tag");
 			
 			
