@@ -784,8 +784,6 @@ public class PersonResource {
 			response = service.path(path).request().accept(mediaType)
 					.get(Response.class);
 			
-			System.out.println("Status1: " + response.getStatus());
-			
 			if (response.getStatus() != 200) {
 				System.out.println("Status2: " + response.getStatus());
 				System.out
@@ -801,11 +799,12 @@ public class PersonResource {
 			
 			obj = new JSONObject(result);
 			
-			JSONObject pictureObj = (JSONObject) obj.get("picture");
+			JSONObject pictureObj = obj.getJSONObject("picture");
+			
 			String pictureUrl = pictureObj.getString("thumbUrl");
 			System.out.println("pictureURL: " + pictureUrl);
 			
-			//String pictureName = pictureObj.getString("random_tag");
+			String pictureName = pictureObj.getString("random_tag");
 			
 			
 			xmlBuild = "<verifyGoal>";
@@ -820,7 +819,7 @@ public class PersonResource {
 				xmlBuild += "<achieved>" + goalTarget.get("achieved")
 					+ "</achieved>";
 				xmlBuild += "<motivation>" + phase + "</motivation>";
-				xmlBuild += "<picture>" + pictureUrl + "</picture>";
+				xmlBuild += "<picture>" + pictureName + "</picture>";
 			xmlBuild += "</goal>";
 
 			xmlBuild += "</verifyGoal>";
