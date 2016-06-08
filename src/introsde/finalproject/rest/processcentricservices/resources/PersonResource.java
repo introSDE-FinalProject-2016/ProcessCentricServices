@@ -761,7 +761,7 @@ public class PersonResource {
 
 		if (goalTarget == null) {
 			xmlBuild = "<goal>" + measureName
-					+ " does not exist. You have to push a createGoal button"
+					+ " does not exist. You have to push createGoal button"
 					+ "</goal>";
 
 		} else {
@@ -909,18 +909,18 @@ public class PersonResource {
 		}
 
 		if ((measureTarget == null) && (goalTarget != null)) {
-			xmlBuild = "<measure>" + measureName + " does not exist "
+			xmlBuild = "<measure>" + measureName + " does not exist. You have to push createMeasure button "
 					+ "</measure>";
 			xmlBuild += "<goal>" + measureName + " exist " + "</goal>";
 
 		} else if ((measureTarget != null) && (goalTarget == null)) {
 			xmlBuild = "<measure>" + measureName + " exist " + "</measure>";
-			xmlBuild += "<goal>" + measureName + " does not exist " + "</goal>";
+			xmlBuild += "<goal>" + measureName + " does not exist. You have to push createGoal button " + "</goal>";
 
 		} else if ((measureTarget == null) && (goalTarget == null)) {
-			xmlBuild = "<measure>" + measureName + " does not exist "
+			xmlBuild = "<measure>" + measureName + " does not exist. You have to push createMeasure button "
 					+ "</measure>";
-			xmlBuild += "<goal>" + measureName + " does not exist " + "</goal>";
+			xmlBuild += "<goal>" + measureName + " does not exist. You have to push createGoal button " + "</goal>";
 
 		} else {
 
