@@ -875,7 +875,11 @@ public class PersonResource {
 			xmlBuild = "<measure>" + measureName + " exist " + "</measure>";
 			xmlBuild += "<goal>" + measureName + " does not exist " + "</goal>";
 
-		} else {
+		}else if ((measureTarget == null) && (goalTarget == null)) {
+			xmlBuild = "<measure>" + measureName + " does not exist " + "</measure>";
+			xmlBuild += "<goal>" + measureName + " does not exist " + "</goal>";
+
+		}else {
 
 			// II. GET PERSON/{IDPERSON}/COMPARISON-VALUE/{MEASURENAME} --> BLS
 			path = "/person/" + idPerson + "/comparison-value/"
