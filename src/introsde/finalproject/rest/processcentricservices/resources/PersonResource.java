@@ -777,15 +777,23 @@ public class PersonResource {
 			String phase = getPhrase(goalTarget.getBoolean("achieved"),
 					idPerson, measureName);
 
-			// IV. GET ADAPTER/PICTURE
+			// IV. GET ADAPTER/PICTURE --> SS
 			path = "/adapter/picture";
 
-			service = client.target(storageServiceURL);
-			response = service.path(path).request().accept(mediaType)
-					.get(Response.class);
-			
-			if (response.getStatus() != 200) {
-				System.out.println("Status2: " + response.getStatus());
+			DefaultHttpClient httpClient = new DefaultHttpClient();
+			HttpGet request = new HttpGet(storageServiceURL + path);
+			HttpResponse resp = httpClient.execute(request);
+
+			BufferedReader rd = new BufferedReader(new InputStreamReader(resp
+					.getEntity().getContent()));
+
+			StringBuffer rs = new StringBuffer();
+			String line = "";
+			while ((line = rd.readLine()) != null) {
+				rs.append(line);
+			}
+
+			if (resp.getStatusLine().getStatusCode() != 200) {
 				System.out
 						.println("Storage Service Error catch response.getStatus() != 200");
 				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -793,18 +801,14 @@ public class PersonResource {
 						.build();
 			}
 
-			
-			result = response.readEntity(String.class);
-			System.out.println(result);
-			
-			obj = new JSONObject(result);
-			
-			JSONObject pictureObj = obj.getJSONObject("picture");
-			
+			JSONObject verifyGoal = new JSONObject(rs.toString());
+			JSONObject pictureObj = verifyGoal.getJSONObject("picture");
 			String pictureUrl = pictureObj.getString("thumbUrl");
-			System.out.println("pictureURL: " + pictureUrl);
-			
 			String pictureName = pictureObj.getString("random_tag");
+			
+			System.out.println("Picture:");
+			System.out.println("Name: " + pictureName);
+			System.out.println("URL: " + pictureUrl);
 			
 			
 			xmlBuild = "<verifyGoal>";
@@ -826,6 +830,7 @@ public class PersonResource {
 
 		}
 
+		
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 
