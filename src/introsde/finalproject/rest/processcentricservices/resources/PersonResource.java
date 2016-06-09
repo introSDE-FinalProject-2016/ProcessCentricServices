@@ -769,11 +769,18 @@ public class PersonResource {
 					+ "</goal>";
 
 		} else {
+			
+			String measureTargetName = measureName;
+			double measureTargetValue = 70;
+			
+			if(measureTarget != null){
+				measureTargetName = measureTarget.getString("name");
+				measureTargetValue = measureTarget.getDouble("value");
+			}
 
 			System.out.println("Measure:\n");
-			System.out.println("ID: " + measureTarget.get("mid"));
-			System.out.println("Name: " + measureTarget.get("name"));
-			System.out.println("Value: " + measureTarget.get("value"));
+			System.out.println("Name: " + measureTargetName);
+			System.out.println("Value: " + measureTargetValue);	
 			
 			System.out.println("Goal:\n");
 			System.out.println("ID: " + goalTarget.get("gid"));
@@ -976,7 +983,7 @@ public class PersonResource {
 			case "weight":
 				
 				//losing 10% of weight in a month
-				double newGoalValue = valoreScontato(measureTarget.getDouble("value"), 10);
+				double newGoalValue = valoreScontato(measureTargetValue, 10);
 				System.out.println("Value losing 10%: " + newGoalValue);
 				
 				if (goalValueDouble <= newGoalValue) {
