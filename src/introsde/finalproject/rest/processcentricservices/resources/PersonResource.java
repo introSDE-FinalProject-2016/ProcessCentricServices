@@ -63,11 +63,6 @@ public class PersonResource {
 		this.processCentricServiceURL = urlInfo.getProcesscentricURL();
 	}
 
-	private String errorMessage(Exception e) {
-		return "{ \n \"error\" : \"Error in Process Centric Services, due to the exception: "
-				+ e + "\"}";
-	}
-
 	private String externalErrorMessageSS(String e) {
 		return "{ \n \"error\" : \"Error in External Storage Services, due to the exception: "
 				+ e + "\"}";
@@ -707,8 +702,9 @@ public class PersonResource {
 	 * GET /person/{idPerson}/verifyGoal/{measureName} V Integration Logic
 	 * 
 	 * verifyGoal(idPerson, measureName) method calls the following methods:
-	 * *readPersonDetails(idPerson) --> BLS *getMotivationGoal(idPerson,
-	 * measureName) --> BLS *getMeasureTypes() --> PCS *getPicture() --> SS
+	 * *readPersonDetails(idPerson) --> BLS *updateGoal(idPerson, idGoal) --> SS
+	 * *getPerson(idPerson) --> SS *getMotivationGoal(idPerson, measureName) -->
+	 * BLS *getMeasureTypes() --> PCS *getPicture() --> SS
 	 * 
 	 * @return
 	 */
@@ -720,7 +716,7 @@ public class PersonResource {
 			@PathParam("measureName") String measureName) throws Exception {
 
 		System.out
-				.println("verifyGoal: Firth integration logic which calls 4 services sequentially "
+				.println("verifyGoal: Firth integration logic which calls 6 services sequentially "
 						+ "from Storage and Business Logic Services in Process Centric Services...");
 
 		// I. GET PERSON/{IDPERSON} --> BLS
@@ -796,7 +792,8 @@ public class PersonResource {
 			// check if goal is achieved
 			switch (goalType) {
 			case "steps":
-
+				
+				//walking more than 5000 steps a day 
 				if (goalValueInt >= 5000) {
 
 					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
@@ -852,6 +849,7 @@ public class PersonResource {
 
 			case "water":
 
+				//drinking at least 3 litres of water a day
 				if (goalValueDouble >= 3.0) {
 
 					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
@@ -907,6 +905,7 @@ public class PersonResource {
 
 			case "sleep":
 
+				//sleeping at least 8 hours a day
 				if (goalValueDouble >= 8.0) {
 
 					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
@@ -959,14 +958,73 @@ public class PersonResource {
 					}
 				}
 				break;
+				
+			case "weight":
+				
+				//losing 10% of weight in a month
+				double newGoalValue = valoreScontato(goalValueDouble, 10);
+				System.out.println("Value losing 10%: " + newGoalValue);
+				
+				if (goalValueDouble <= newGoalValue) {
+
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					updatePath = "/person/" + idPerson + "/goal/"
+							+ goalTarget.getInt("gid");
+					System.out
+							.println("path_put_weight_achieved: " + updatePath);
+
+					updateService = client.target(storageServiceURL);
+
+					updateResponse = updateService
+							.path(updatePath)
+							.request()
+							.accept(mediaType)
+							.put(Entity
+									.entity(updateInputGoalJSONok, mediaType),
+									Response.class);
+					if (updateResponse.getStatus() != 200) {
+						System.out
+								.println("Storage Service Error catch response.getStatus() != 200");
+						return Response
+								.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity(externalErrorMessageSS(response
+										.toString())).build();
+					}
+				} else {
+
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					updatePath = "/person/" + idPerson + "/goal/"
+							+ goalTarget.getInt("gid");
+					System.out.println("path_put_weight_notAchieved: "
+							+ updatePath);
+
+					updateService = client.target(storageServiceURL);
+
+					updateResponse = updateService
+							.path(updatePath)
+							.request()
+							.accept(mediaType)
+							.put(Entity
+									.entity(updateInputGoalJSONko, mediaType),
+									Response.class);
+					if (updateResponse.getStatus() != 200) {
+						System.out
+								.println("Storage Service Error catch response.getStatus() != 200");
+						return Response
+								.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity(externalErrorMessageSS(response
+										.toString())).build();
+					}
+				}
+				break;
 			}
 
 			// III. GET PERSON/{IDPERSON} --> SS
 			String pathGet = "/person/" + idPerson;
 
 			WebTarget serviceGet = client.target(storageServiceURL);
-			Response responseGet = serviceGet.path(pathGet).request().accept(mediaType)
-					.get(Response.class);
+			Response responseGet = serviceGet.path(pathGet).request()
+					.accept(mediaType).get(Response.class);
 
 			if (responseGet.getStatus() != 200) {
 				System.out.println("Status: " + responseGet.getStatus());
@@ -986,11 +1044,12 @@ public class PersonResource {
 			JSONObject goalObjGet = (JSONObject) objGet.get("goals");
 			JSONArray goalArrGet = goalObjGet.getJSONArray("goal");
 			for (int i = 0; i < goalArrGet.length(); i++) {
-				if (goalArrGet.getJSONObject(i).getString("type").equals(measureName)) {
+				if (goalArrGet.getJSONObject(i).getString("type")
+						.equals(measureName)) {
 					goalTargetGet = goalArrGet.getJSONObject(i);
 				}
 			}
-			
+
 			// IV. GET /MEASURETYPES
 			String measureType = getMeasureType(measureName);
 
@@ -1056,6 +1115,22 @@ public class PersonResource {
 		System.out.println(jsonPrettyPrintString);
 
 		return Response.ok(jsonPrettyPrintString).build();
+	}
+
+	/**
+	 * This method return the value of weight - 10%
+	 * @param valore
+	 * @param sconto
+	 * @return
+	 */
+	public static double valoreScontato(double valore, double sconto) {
+		double out = valore * sconto / 100; // out sarà il valore restituito,
+											// ora contiene il valore da
+											// sottrarre al valore iniziale
+		out = valore - out; // sottraiamo a valore (il valore iniziale) il
+							// valore da scontare. Così otteniamo il valore
+							// scontato che restituiamo
+		return out;
 	}
 
 	/*	*//**
