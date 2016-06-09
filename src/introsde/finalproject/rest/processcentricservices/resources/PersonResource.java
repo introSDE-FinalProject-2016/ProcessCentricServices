@@ -1145,12 +1145,8 @@ public class PersonResource {
 	 * @return
 	 */
 	public static double valoreScontato(double valore, double sconto) {
-		double out = valore * sconto / 100; // out sarà il valore restituito,
-											// ora contiene il valore da
-											// sottrarre al valore iniziale
-		out = valore - out; // sottraiamo a valore (il valore iniziale) il
-							// valore da scontare. Così otteniamo il valore
-							// scontato che restituiamo
+		double out = valore * sconto / 100; 
+		out = valore - out; 
 		return out;
 	}
 
