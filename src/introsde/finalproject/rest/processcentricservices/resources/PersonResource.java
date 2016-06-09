@@ -706,10 +706,9 @@ public class PersonResource {
 	/**
 	 * GET /person/{idPerson}/verifyGoal/{measureName} V Integration Logic
 	 * 
-	 * verifyGoal(idPerson, measureName) method calls the
-	 * following methods: *readPersonDetails(idPerson) --> BLS
-	 * *getMotivationGoal(idPerson, measureName) --> BLS *getMeasureTypes() -->
-	 * PCS *getPicture() --> SS
+	 * verifyGoal(idPerson, measureName) method calls the following methods:
+	 * *readPersonDetails(idPerson) --> BLS *getMotivationGoal(idPerson,
+	 * measureName) --> BLS *getMeasureTypes() --> PCS *getPicture() --> SS
 	 * 
 	 * @return
 	 */
@@ -765,19 +764,241 @@ public class PersonResource {
 					+ "</goal>";
 
 		} else {
+
 			System.out.println("Goal:");
+			System.out.println("ID: " + goalTarget.get("gid"));
 			System.out.println("Name: " + goalTarget.get("type"));
 			System.out.println("Value: " + goalTarget.get("value"));
 			System.out.println("Achieved: " + goalTarget.get("achieved"));
 
-			// II. GET /MEASURETYPES
+			double goalValueDouble = 0.;
+			int goalValueInt = 0;
+
+			String updateInputGoalJSONok = "{" + "\"achieved\":\"" + true
+					+ "\"}";
+			String updateInputGoalJSONko = "{" + "\"achieved\":\"" + false
+					+ "\"}";
+
+			// convert measureName heart rate into heart-rate
+			String sGoal = goalTarget.getString("type");
+			String goalType = sGoal.replaceAll(" ", "-");
+
+			if (goalType.equals("steps") || goalType.equals("hear-rate")) {
+				goalValueInt = goalTarget.getInt("value");
+			} else {
+				goalValueDouble = goalTarget.getDouble("value");
+			}
+
+			String updatePath = null;
+			WebTarget updateService = null;
+			Response updateResponse = null;
+
+			// check if goal is achieved
+			switch (goalType) {
+			case "steps":
+
+				if (goalValueInt >= 5000) {
+
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					updatePath = "/person/" + idPerson + "/goal/"
+							+ goalTarget.getInt("gid");
+					System.out
+							.println("path_put_steps_achieved: " + updatePath);
+
+					updateService = client.target(storageServiceURL);
+
+					updateResponse = updateService
+							.path(updatePath)
+							.request()
+							.accept(mediaType)
+							.put(Entity
+									.entity(updateInputGoalJSONok, mediaType),
+									Response.class);
+					if (updateResponse.getStatus() != 200) {
+						System.out
+								.println("Storage Service Error catch response.getStatus() != 200");
+						return Response
+								.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity(externalErrorMessageSS(response
+										.toString())).build();
+					}
+				} else {
+
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					updatePath = "/person/" + idPerson + "/goal/"
+							+ goalTarget.getInt("gid");
+					System.out.println("path_put_steps_notAchieved: "
+							+ updatePath);
+
+					updateService = client.target(storageServiceURL);
+
+					updateResponse = updateService
+							.path(updatePath)
+							.request()
+							.accept(mediaType)
+							.put(Entity
+									.entity(updateInputGoalJSONko, mediaType),
+									Response.class);
+					if (updateResponse.getStatus() != 200) {
+						System.out
+								.println("Storage Service Error catch response.getStatus() != 200");
+						return Response
+								.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity(externalErrorMessageSS(response
+										.toString())).build();
+					}
+				}
+				break;
+
+			case "water":
+
+				if (goalValueDouble >= 3.0) {
+
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					updatePath = "/person/" + idPerson + "/goal/"
+							+ goalTarget.getInt("gid");
+					System.out
+							.println("path_put_water_achieved: " + updatePath);
+
+					updateService = client.target(storageServiceURL);
+
+					updateResponse = updateService
+							.path(updatePath)
+							.request()
+							.accept(mediaType)
+							.put(Entity
+									.entity(updateInputGoalJSONok, mediaType),
+									Response.class);
+					if (updateResponse.getStatus() != 200) {
+						System.out
+								.println("Storage Service Error catch response.getStatus() != 200");
+						return Response
+								.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity(externalErrorMessageSS(response
+										.toString())).build();
+					}
+				} else {
+
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					updatePath = "/person/" + idPerson + "/goal/"
+							+ goalTarget.getInt("gid");
+					System.out.println("path_put_water_notAchieved: "
+							+ updatePath);
+
+					updateService = client.target(storageServiceURL);
+
+					updateResponse = updateService
+							.path(updatePath)
+							.request()
+							.accept(mediaType)
+							.put(Entity
+									.entity(updateInputGoalJSONko, mediaType),
+									Response.class);
+					if (updateResponse.getStatus() != 200) {
+						System.out
+								.println("Storage Service Error catch response.getStatus() != 200");
+						return Response
+								.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity(externalErrorMessageSS(response
+										.toString())).build();
+					}
+				}
+				break;
+
+			case "sleep":
+
+				if (goalValueDouble >= 8.0) {
+
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					updatePath = "/person/" + idPerson + "/goal/"
+							+ goalTarget.getInt("gid");
+					System.out
+							.println("path_put_sleep_achieved: " + updatePath);
+
+					updateService = client.target(storageServiceURL);
+
+					updateResponse = updateService
+							.path(updatePath)
+							.request()
+							.accept(mediaType)
+							.put(Entity
+									.entity(updateInputGoalJSONok, mediaType),
+									Response.class);
+					if (updateResponse.getStatus() != 200) {
+						System.out
+								.println("Storage Service Error catch response.getStatus() != 200");
+						return Response
+								.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity(externalErrorMessageSS(response
+										.toString())).build();
+					}
+				} else {
+
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					updatePath = "/person/" + idPerson + "/goal/"
+							+ goalTarget.getInt("gid");
+					System.out.println("path_put_sleep_notAchieved: "
+							+ updatePath);
+
+					updateService = client.target(storageServiceURL);
+
+					updateResponse = updateService
+							.path(updatePath)
+							.request()
+							.accept(mediaType)
+							.put(Entity
+									.entity(updateInputGoalJSONko, mediaType),
+									Response.class);
+					if (updateResponse.getStatus() != 200) {
+						System.out
+								.println("Storage Service Error catch response.getStatus() != 200");
+						return Response
+								.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity(externalErrorMessageSS(response
+										.toString())).build();
+					}
+				}
+				break;
+			}
+
+			// III. GET PERSON/{IDPERSON} --> SS
+			String pathGet = "/person/" + idPerson;
+
+			WebTarget serviceGet = client.target(storageServiceURL);
+			Response responseGet = serviceGet.path(pathGet).request().accept(mediaType)
+					.get(Response.class);
+
+			if (responseGet.getStatus() != 200) {
+				System.out.println("Status: " + responseGet.getStatus());
+				System.out
+						.println("Storage Service Error catch response.getStatus() != 200");
+				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+						.entity(externalErrorMessageSS(response.toString()))
+						.build();
+			}
+
+			String resultGet = responseGet.readEntity(String.class);
+
+			JSONObject objGet = new JSONObject(resultGet);
+
+			JSONObject goalTargetGet = null;
+
+			JSONObject goalObjGet = (JSONObject) objGet.get("goals");
+			JSONArray goalArrGet = goalObjGet.getJSONArray("goal");
+			for (int i = 0; i < goalArrGet.length(); i++) {
+				if (goalArrGet.getJSONObject(i).getString("type").equals(measureName)) {
+					goalTargetGet = goalArrGet.getJSONObject(i);
+				}
+			}
+			
+			// IV. GET /MEASURETYPES
 			String measureType = getMeasureType(measureName);
 
-			// III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
-			String phase = getPhrase(goalTarget.getBoolean("achieved"),
+			// IV. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
+			String phase = getPhrase(goalTargetGet.getBoolean("achieved"),
 					idPerson, measureName);
 
-			// IV. GET ADAPTER/PICTURE --> SS
+			// VI. GET ADAPTER/PICTURE --> SS
 			path = "/adapter/picture";
 
 			DefaultHttpClient httpClient = new DefaultHttpClient();
@@ -801,36 +1022,34 @@ public class PersonResource {
 						.build();
 			}
 
-			JSONObject verifyGoal = new JSONObject(rs.toString());
-			JSONObject pictureObj = verifyGoal.getJSONObject("picture");
+			JSONObject getPicture = new JSONObject(rs.toString());
+			JSONObject pictureObj = getPicture.getJSONObject("picture");
 			String pictureUrl = pictureObj.getString("thumbUrl");
 			String pictureName = pictureObj.getString("random_tag");
-			
+
 			System.out.println("Picture:");
 			System.out.println("Name: " + pictureName);
 			System.out.println("URL: " + pictureUrl);
-			
-			
+
 			xmlBuild = "<verifyGoal>";
 
-			xmlBuild += "<person>" + obj.get("lastname") + ", "
+			xmlBuild += "<person>" + objGet.get("lastname") + ", "
 					+ obj.get("firstname") + "</person>";
 
 			xmlBuild += "<goal>";
-				xmlBuild += "<name>" + goalTarget.get("type") + "</name>";
-				xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
-				xmlBuild += "<type>" + measureType + "</type>";
-				xmlBuild += "<achieved>" + goalTarget.get("achieved")
+			xmlBuild += "<name>" + goalTargetGet.get("type") + "</name>";
+			xmlBuild += "<value>" + goalTargetGet.get("value") + "</value>";
+			xmlBuild += "<type>" + measureType + "</type>";
+			xmlBuild += "<achieved>" + goalTargetGet.get("achieved")
 					+ "</achieved>";
-				xmlBuild += "<motivation>" + phase + "</motivation>";
-				xmlBuild += "<picture>" + pictureUrl + "</picture>";
+			xmlBuild += "<motivation>" + phase + "</motivation>";
+			xmlBuild += "<picture>" + pictureUrl + "</picture>";
 			xmlBuild += "</goal>";
 
 			xmlBuild += "</verifyGoal>";
 
 		}
 
-		
 		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
 		String jsonPrettyPrintString = xmlJSONObj.toString(4);
 
@@ -838,6 +1057,127 @@ public class PersonResource {
 
 		return Response.ok(jsonPrettyPrintString).build();
 	}
+
+	/*	*//**
+	 * GET /person/{idPerson}/verifyGoal/{measureName} V Integration Logic
+	 * 
+	 * verifyGoal(idPerson, measureName) method calls the following methods:
+	 * *readPersonDetails(idPerson) --> BLS *getMotivationGoal(idPerson,
+	 * measureName) --> BLS *getMeasureTypes() --> PCS *getPicture() --> SS
+	 * 
+	 * @return
+	 */
+	/*
+	 * @GET
+	 * 
+	 * @Path("{pid}/verifyGoal/{measureName}")
+	 * 
+	 * @Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
+	 * 
+	 * @Produces(MediaType.APPLICATION_JSON) public Response
+	 * verifyGoal(@PathParam("pid") int idPerson,
+	 * 
+	 * @PathParam("measureName") String measureName) throws Exception {
+	 * 
+	 * System.out .println(
+	 * "verifyGoal: Firth integration logic which calls 4 services sequentially "
+	 * +
+	 * "from Storage and Business Logic Services in Process Centric Services..."
+	 * );
+	 * 
+	 * // I. GET PERSON/{IDPERSON} --> BLS String path = "/person/" + idPerson;
+	 * 
+	 * String xmlBuild = " ";
+	 * 
+	 * ClientConfig clientConfig = new ClientConfig(); Client client =
+	 * ClientBuilder.newClient(clientConfig);
+	 * 
+	 * WebTarget service = client.target(businessLogicServiceURL); Response
+	 * response = service.path(path).request().accept(mediaType)
+	 * .get(Response.class);
+	 * 
+	 * if (response.getStatus() != 200) { System.out.println("Status: " +
+	 * response.getStatus()); System.out
+	 * .println("Business Logic Service Error catch response.getStatus() != 200"
+	 * ); return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	 * .entity(externalErrorMessageBLS(response.toString())) .build(); }
+	 * 
+	 * String result = response.readEntity(String.class);
+	 * 
+	 * JSONObject obj = new JSONObject(result);
+	 * 
+	 * JSONObject goalTarget = null;
+	 * 
+	 * JSONObject goalObj = (JSONObject) obj.get("goals"); JSONArray goalArr =
+	 * goalObj.getJSONArray("goal"); for (int i = 0; i < goalArr.length(); i++)
+	 * { if (goalArr.getJSONObject(i).getString("type").equals(measureName)) {
+	 * goalTarget = goalArr.getJSONObject(i); } }
+	 * 
+	 * if (goalTarget == null) { xmlBuild = "<goal>" + measureName +
+	 * " does not exist. You have to push createGoal button" + "</goal>";
+	 * 
+	 * } else { System.out.println("Goal:"); System.out.println("Name: " +
+	 * goalTarget.get("type")); System.out.println("Value: " +
+	 * goalTarget.get("value")); System.out.println("Achieved: " +
+	 * goalTarget.get("achieved"));
+	 * 
+	 * // II. GET /MEASURETYPES String measureType =
+	 * getMeasureType(measureName);
+	 * 
+	 * // III. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
+	 * String phase = getPhrase(goalTarget.getBoolean("achieved"), idPerson,
+	 * measureName);
+	 * 
+	 * // IV. GET ADAPTER/PICTURE --> SS path = "/adapter/picture";
+	 * 
+	 * DefaultHttpClient httpClient = new DefaultHttpClient(); HttpGet request =
+	 * new HttpGet(storageServiceURL + path); HttpResponse resp =
+	 * httpClient.execute(request);
+	 * 
+	 * BufferedReader rd = new BufferedReader(new InputStreamReader(resp
+	 * .getEntity().getContent()));
+	 * 
+	 * StringBuffer rs = new StringBuffer(); String line = ""; while ((line =
+	 * rd.readLine()) != null) { rs.append(line); }
+	 * 
+	 * if (resp.getStatusLine().getStatusCode() != 200) { System.out
+	 * .println("Storage Service Error catch response.getStatus() != 200");
+	 * return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+	 * .entity(externalErrorMessageSS(response.toString())) .build(); }
+	 * 
+	 * JSONObject verifyGoal = new JSONObject(rs.toString()); JSONObject
+	 * pictureObj = verifyGoal.getJSONObject("picture"); String pictureUrl =
+	 * pictureObj.getString("thumbUrl"); String pictureName =
+	 * pictureObj.getString("random_tag");
+	 * 
+	 * System.out.println("Picture:"); System.out.println("Name: " +
+	 * pictureName); System.out.println("URL: " + pictureUrl);
+	 * 
+	 * 
+	 * xmlBuild = "<verifyGoal>";
+	 * 
+	 * xmlBuild += "<person>" + obj.get("lastname") + ", " +
+	 * obj.get("firstname") + "</person>";
+	 * 
+	 * xmlBuild += "<goal>"; xmlBuild += "<name>" + goalTarget.get("type") +
+	 * "</name>"; xmlBuild += "<value>" + goalTarget.get("value") + "</value>";
+	 * xmlBuild += "<type>" + measureType + "</type>"; xmlBuild += "<achieved>"
+	 * + goalTarget.get("achieved") + "</achieved>"; xmlBuild += "<motivation>"
+	 * + phase + "</motivation>"; xmlBuild += "<picture>" + pictureUrl +
+	 * "</picture>"; xmlBuild += "</goal>";
+	 * 
+	 * xmlBuild += "</verifyGoal>";
+	 * 
+	 * }
+	 * 
+	 * 
+	 * JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild); String
+	 * jsonPrettyPrintString = xmlJSONObj.toString(4);
+	 * 
+	 * System.out.println(jsonPrettyPrintString);
+	 * 
+	 * return Response.ok(jsonPrettyPrintString).build(); }
+	 */
 
 	/**
 	 * GET /person/{idPerson}/comparisonInfo/{measureName} VI Integration Logic
@@ -909,18 +1249,24 @@ public class PersonResource {
 		}
 
 		if ((measureTarget == null) && (goalTarget != null)) {
-			xmlBuild = "<measure>" + measureName + " does not exist. You have to push createMeasure button "
+			xmlBuild = "<measure>" + measureName
+					+ " does not exist. You have to push createMeasure button "
 					+ "</measure>";
 			xmlBuild += "<goal>" + measureName + " exist " + "</goal>";
 
 		} else if ((measureTarget != null) && (goalTarget == null)) {
 			xmlBuild = "<measure>" + measureName + " exist " + "</measure>";
-			xmlBuild += "<goal>" + measureName + " does not exist. You have to push createGoal button " + "</goal>";
+			xmlBuild += "<goal>" + measureName
+					+ " does not exist. You have to push createGoal button "
+					+ "</goal>";
 
 		} else if ((measureTarget == null) && (goalTarget == null)) {
-			xmlBuild = "<measure>" + measureName + " does not exist. You have to push createMeasure button "
+			xmlBuild = "<measure>" + measureName
+					+ " does not exist. You have to push createMeasure button "
 					+ "</measure>";
-			xmlBuild += "<goal>" + measureName + " does not exist. You have to push createGoal button " + "</goal>";
+			xmlBuild += "<goal>" + measureName
+					+ " does not exist. You have to push createGoal button "
+					+ "</goal>";
 
 		} else {
 
