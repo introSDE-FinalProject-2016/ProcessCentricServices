@@ -704,7 +704,7 @@ public class PersonResource {
 	 * verifyGoal(idPerson, measureName) method calls the following methods:
 	 * *readPersonDetails(idPerson) --> BLS *updateGoal(idPerson, idGoal) --> SS
 	 * *getPerson(idPerson) --> SS *getMotivationGoal(idPerson, measureName) -->
-	 * BLS *getMeasureTypes() --> PCS *getPicture() --> SS
+	 * BLS *getMeasureTypes() --> SS *getPicture() --> SS
 	 * 
 	 * @return
 	 */
@@ -817,7 +817,7 @@ public class PersonResource {
 				//walking more than 5000 steps a day 
 				if (goalValueInt >= 5000) {
 
-					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
 					updatePath = "/person/" + idPerson + "/goal/"
 							+ goalTarget.getInt("gid");
 					System.out
@@ -842,7 +842,7 @@ public class PersonResource {
 					}
 				} else {
 
-					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
 					updatePath = "/person/" + idPerson + "/goal/"
 							+ goalTarget.getInt("gid");
 					System.out.println("path_put_steps_notAchieved: "
@@ -873,7 +873,7 @@ public class PersonResource {
 				//drinking at least 3 litres of water a day
 				if (goalValueDouble >= 3.0) {
 
-					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
 					updatePath = "/person/" + idPerson + "/goal/"
 							+ goalTarget.getInt("gid");
 					System.out
@@ -898,7 +898,7 @@ public class PersonResource {
 					}
 				} else {
 
-					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
 					updatePath = "/person/" + idPerson + "/goal/"
 							+ goalTarget.getInt("gid");
 					System.out.println("path_put_water_notAchieved: "
@@ -929,7 +929,7 @@ public class PersonResource {
 				//sleeping at least 8 hours a day
 				if (goalValueDouble >= 8.0) {
 
-					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
 					updatePath = "/person/" + idPerson + "/goal/"
 							+ goalTarget.getInt("gid");
 					System.out
@@ -954,7 +954,7 @@ public class PersonResource {
 					}
 				} else {
 
-					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
 					updatePath = "/person/" + idPerson + "/goal/"
 							+ goalTarget.getInt("gid");
 					System.out.println("path_put_sleep_notAchieved: "
@@ -988,7 +988,7 @@ public class PersonResource {
 				
 				if (goalValueDouble <= newGoalValue) {
 
-					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
 					updatePath = "/person/" + idPerson + "/goal/"
 							+ goalTarget.getInt("gid");
 					System.out
@@ -1013,7 +1013,7 @@ public class PersonResource {
 					}
 				} else {
 
-					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL}
+					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
 					updatePath = "/person/" + idPerson + "/goal/"
 							+ goalTarget.getInt("gid");
 					System.out.println("path_put_weight_notAchieved: "
@@ -1071,7 +1071,7 @@ public class PersonResource {
 				}
 			}
 
-			// IV. GET /MEASURETYPES
+			// IV. GET /MEASURETYPES --> SS
 			String measureType = getMeasureType(measureName);
 
 			// IV. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
@@ -1155,7 +1155,7 @@ public class PersonResource {
 	 * 
 	 * ComparisonInfo(idPerson, measureName) method calls the following methods:
 	 * *readPersonDetails(idPerson) --> BLS *comparisonValueOfMeasure(idPerson,
-	 * measureName) --> BLS *readMeasureTypes() --> PCS *getQuote() --> AS
+	 * measureName) --> BLS *readMeasureTypes() --> SS *getQuote() --> SS
 	 * 
 	 * @param idPerson
 	 * @param measureName
@@ -1271,11 +1271,10 @@ public class PersonResource {
 			JSONObject comparisonInfo = (JSONObject) obj2
 					.getJSONObject("comparison-information");
 
-			// III. GET /MEASURETYPES
+			// III. GET /MEASURETYPES --> SS
 			String measureType = getMeasureType(measureName);
 
-			// IV. GET PERSON/{IDPERSON}/MOTIVATION-GOAL/{MEASURENAME} --> BLS
-			// IV. GET /MOTIVATION-QUOTE --> AS
+			// IV. GET /MOTIVATION-QUOTE --> SS
 			String quote = getMotivationQuote();
 
 			xmlBuild = "<info>";
@@ -1346,16 +1345,16 @@ public class PersonResource {
 	}
 
 	/**
-	 * This method call getQuote from AS and returns a quote
+	 * This method call getQuote from SS and returns a quote
 	 * 
 	 * @return String
 	 */
 	private String getMotivationQuote() {
-		String path = "/motivation-quote";
+		String path = "/adapter/quote";
 		ClientConfig clientConfig = new ClientConfig();
 
 		Client client = ClientBuilder.newClient(clientConfig);
-		WebTarget service = client.target(adapterServiceURL);
+		WebTarget service = client.target(storageServiceURL);
 		Response response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
 
@@ -1365,7 +1364,7 @@ public class PersonResource {
 	}
 
 	/**
-	 * This method call measureTypes from PCS and returns measureType
+	 * This method call measureTypes from SS and returns measureType
 	 * 
 	 * @return String
 	 */
