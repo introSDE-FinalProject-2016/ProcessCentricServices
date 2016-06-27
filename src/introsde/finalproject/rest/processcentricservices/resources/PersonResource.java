@@ -278,16 +278,28 @@ public class PersonResource {
 					.get(Response.class);
 			System.out.println(response);
 			
-			HistoryMeasureList historyMeasureList = response.readEntity(HistoryMeasureList.class);
-			for(Measure m: historyMeasureList.getHistoryMeasureList()){
+			String result = response.readEntity(String.class);
+			JSONObject obj = new JSONObject(result);
+			
+			List<Measure> measureList = new ArrayList<Measure>();
+			JSONArray measureArr = (JSONArray)obj.getJSONArray("measure");
+			
+			for (int j = 0; j < measureArr.length(); j++) {
+				Measure m = new Measure(measureArr.getJSONObject(j).getInt("mid"), 
+										measureArr.getJSONObject(j).getString("name"), 
+										measureArr.getJSONObject(j).getInt("value"), 
+										measureArr.getJSONObject(j).getString("created"));
+				measureList.add(j, m);
+			}
+			
+			for(int i=0; i<measureList.size(); i++){
+				Measure m = measureList.get(i);
 				if(m.getMid() == idMeasure){
-					System.out.println("getMeasureById():" + m.toString());
+					System.out.println("Measure:" + m.toString());
 					return m;
 				}
 			}
 		}catch(Exception e){
-			System.out
-			.println("PCS Error catch creating post reminder response.getStatus() != 200  ");
 			System.out.println(errorMessage(e));
 		}
 		return null;
