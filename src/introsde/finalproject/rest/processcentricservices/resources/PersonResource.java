@@ -210,7 +210,7 @@ public class PersonResource {
 	private Boolean checkGoal(int idPerson, Measure m) {
 		String path = "/person/" + idPerson + "/measure/" + m.getMid() + "/check";
 
-		WebTarget service = client.target(storageServiceURL);
+		WebTarget service = client.target(businessLogicServiceURL);
 		Response response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
 		
