@@ -268,20 +268,27 @@ public class PersonResource {
 	@Path("{pid}/measure/{mid}")
 	@Produces( MediaType.APPLICATION_JSON )
 	public Measure getMeasureById(@PathParam("pid") int idPerson, @PathParam("mid") int idMeasure) {
-		System.out.println("getMeasureById: Reading Measures for idPerson "+ idPerson +"...");
-		
-		String path = "/person/" + idPerson + "/historyHealth";
+		try{
+			System.out.println("getMeasureById: Reading Measures for idPerson "+ idPerson +"...");
+			
+			String path = "/person/" + idPerson + "/historyHealth";
 
-		WebTarget service = client.target(storageServiceURL);
-		Response response = service.path(path).request().accept(mediaType)
-				.get(Response.class);
-		
-		HistoryMeasureList historyMeasureList = response.readEntity(HistoryMeasureList.class);
-		for(Measure m: historyMeasureList.getHistoryMeasureList()){
-			if(m.getMid() == idMeasure){
-				System.out.println("getMeasureById():" + m.toString());
-				return m;
+			WebTarget service = client.target(storageServiceURL);
+			Response response = service.path(path).request().accept(mediaType)
+					.get(Response.class);
+			System.out.println(response);
+			
+			HistoryMeasureList historyMeasureList = response.readEntity(HistoryMeasureList.class);
+			for(Measure m: historyMeasureList.getHistoryMeasureList()){
+				if(m.getMid() == idMeasure){
+					System.out.println("getMeasureById():" + m.toString());
+					return m;
+				}
 			}
+		}catch(Exception e){
+			System.out
+			.println("PCS Error catch creating post reminder response.getStatus() != 200  ");
+			System.out.println(errorMessage(e));
 		}
 		return null;
 	}
