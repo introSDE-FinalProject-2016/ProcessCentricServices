@@ -3,6 +3,7 @@ package introsde.finalproject.rest.processcentricservices.resources;
 import introsde.finalproject.rest.processcentricservices.model.Measure;
 import introsde.finalproject.rest.processcentricservices.util.UrlInfo;
 import introsde.finalproject.rest.processcentricservices.wrapper.CurrentMeasureList;
+import introsde.finalproject.rest.processcentricservices.wrapper.HistoryMeasureList;
 import introsde.finalproject.rest.processcentricservices.wrapper.NewMeasureResponseWrapper;
 
 import java.io.BufferedReader;
@@ -258,7 +259,15 @@ public class PersonResource {
 	 * @param m Measure
 	 * @return Measure a measure
 	 */
-	public Measure getMeasureById(int idPerson, int idMeasure) {
+	/**
+	 * GET /person/{idPersonId}/measure/{idMeasure}
+	 * Return the measure with {measureId}
+	 * @return Measure a measure
+	 */
+	@GET
+	@Path("{pid}/measure/{mid}")
+	@Produces( MediaType.APPLICATION_JSON )
+	public Measure getMeasureById(@PathParam("pid") int idPerson, @PathParam("mid") int idMeasure) {
 		System.out.println("getMeasureById: Reading Measures for idPerson "+ idPerson +"...");
 		
 		String path = "/person/" + idPerson + "/historyHealth";
@@ -267,24 +276,10 @@ public class PersonResource {
 		Response response = service.path(path).request().accept(mediaType)
 				.get(Response.class);
 		
-		String result = response.readEntity(String.class);
-		JSONObject obj = new JSONObject(result);
-		
-		List<Measure> measureList = new ArrayList<Measure>();
-		JSONArray measureArr = (JSONArray)obj.getJSONArray("measure");
-		
-		for (int j = 0; j < measureArr.length(); j++) {
-			Measure m = new Measure(measureArr.getJSONObject(j).getInt("mid"), 
-									measureArr.getJSONObject(j).getString("name"), 
-									measureArr.getJSONObject(j).getInt("value"), 
-									measureArr.getJSONObject(j).getString("created"));
-			measureList.add(j, m);
-		}
-		
-		for(int i=0; i<measureList.size(); i++){
-			Measure m = measureList.get(i);
+		HistoryMeasureList historyMeasureList = response.readEntity(HistoryMeasureList.class);
+		for(Measure m: historyMeasureList.getHistoryMeasureList()){
 			if(m.getMid() == idMeasure){
-				System.out.println("getMeasureById():\n" + m.toString());
+				System.out.println("getMeasureById():" + m.toString());
 				return m;
 			}
 		}
