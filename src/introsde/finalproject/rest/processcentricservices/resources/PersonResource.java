@@ -303,7 +303,7 @@ public class PersonResource {
 	// ******************* GOAL ***********************
 
 	/**
-	 * GET /person/{idPerson}/goal
+	 * GET /person/{idPerson}/goals
 	 * 
 	 * II Integration Logic: countGoalsAchieved(idPerson) BLS -->
 	 * getListGoals(idPerson) (get list of goals) SS -->
@@ -314,7 +314,7 @@ public class PersonResource {
 	 * @return an object of type NewGoalResponseWrapper
 	 */
 	@GET
-	@Path("{pid}/goal")
+	@Path("{pid}/goals")
 	@Produces(MediaType.APPLICATION_JSON)
 	@Consumes(MediaType.APPLICATION_JSON)
 	public Response countGoalsAchieved(@PathParam("pid") int idPerson)
