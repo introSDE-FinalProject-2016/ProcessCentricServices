@@ -1,9 +1,14 @@
 package introsde.finalproject.rest.processcentricservices.resources;
 
+import introsde.finalproject.rest.processcentricservices.model.Measure;
 import introsde.finalproject.rest.processcentricservices.util.UrlInfo;
+import introsde.finalproject.rest.processcentricservices.wrapper.CurrentMeasureList;
+import introsde.finalproject.rest.processcentricservices.wrapper.NewMeasureResponseWrapper;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.List;
 
 import javax.ejb.LocalBean;
 import javax.ejb.Stateless;
@@ -14,6 +19,7 @@ import javax.ws.rs.PUT;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
@@ -44,23 +50,31 @@ public class PersonResource {
 	private UrlInfo urlInfo;
 	private String businessLogicServiceURL;
 	private String storageServiceURL;
-	private String adapterServiceURL;
 	private String processCentricServiceURL;
-
+	private ClientConfig clientConfig;
+	private Client client;
+	
 	private static String mediaType = MediaType.APPLICATION_JSON;
 
 	/**
 	 * initialize the connection with the Business Logic Service (SS)
 	 */
 	public PersonResource(UriInfo uriInfo, Request request) {
+		clientConfig = new ClientConfig();
+		client = ClientBuilder.newClient(clientConfig);
+		
 		this.uriInfo = uriInfo;
 		this.request = request;
 
 		this.urlInfo = new UrlInfo();
 		this.businessLogicServiceURL = urlInfo.getBusinesslogicURL();
 		this.storageServiceURL = urlInfo.getStorageURL();
-		this.adapterServiceURL = urlInfo.getAdapterURL();
 		this.processCentricServiceURL = urlInfo.getProcesscentricURL();
+	}
+
+	private String errorMessage(Exception e) {
+		return "{ \n \"error\" : \"Error in PCS, due to the exception: " + e
+				+ "\"}";
 	}
 
 	private String externalErrorMessageSS(String e) {
@@ -76,6 +90,237 @@ public class PersonResource {
 	// ******************* PERSON ***********************
 
 	/**
+	 * GET /person/{idPerson}/measure?name={name}?value={value} 
+	 * 
+	 * I Integration Logic: insertNewMeasure(idPerson, measureName, value)
+	 * 			SS --> setMeasure(idPerson, measureName, value) (save a new measure into database) 
+	 * 			BLS --> checkGoal(idPerson, Measure) (check if the new measure satisfies a goal)
+	 * 			SS --> getMotivationQuote()
+	 * 			BLS --> getCurrentHealth() (send list of measures to the client)
+	 * 
+	 * @return an object of type NewMeasureResponseWrapper
+	 */
+	@GET
+	@Path("{pid}/measure")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response insertNewMeasure(@PathParam("pid") int idPerson,
+			@QueryParam("name") String name,
+			@QueryParam("value") int value) throws Exception {
+
+		try {
+			System.out
+					.println("insertNewMeasure: Starting for idPerson " + idPerson + "...");
+			
+			Measure m = setMeasure(idPerson, name, value);
+			System.out.println("Measure: " + m.toString());
+			
+			Boolean check = checkGoal(idPerson, m);
+			System.out.println("Check: " + check);
+			
+			String phrase = getPhrase(check);
+			System.out.println("Phrase: " + phrase);
+			
+			CurrentMeasureList currentHealth = getCurrentHealth(idPerson);
+			for(Measure measure: currentHealth.getCurrentMeasureList()){
+				System.out.println(measure.toString());
+			}
+			NewMeasureResponseWrapper nmrw = createWrapper(phrase, currentHealth);
+    		return Response.ok(nmrw).build();
+		
+		} catch (Exception e) {
+			System.out
+					.println("PCS Error catch creating post reminder response.getStatus() != 200  ");
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(errorMessage(e)).build();
+		}
+
+	}
+
+	
+	/**
+     * Create an object of type NewMeasureResponseWrapper
+     * This wrapper is used to put together the currentHealth and the
+     * motivation phrase to send to the client
+     * @param phrase String
+     * @param currentHealth CurrentMeasureList
+     * @return NewMeasureResponseWrapper
+     */
+	private NewMeasureResponseWrapper createWrapper(String phrase, CurrentMeasureList currentHealth) {
+		NewMeasureResponseWrapper n = new NewMeasureResponseWrapper();
+		n.setMeasure(currentHealth);
+		n.setPhrase(phrase);
+		return n;
+	}
+	
+	/**
+	 * This method calls readCurrentHealthDetails and returns list of current measures
+	 * Calls one time the BLS
+	 * @return CurrentMeasureList
+	 */
+	private CurrentMeasureList getCurrentHealth(int idPerson) {
+		String path = "/person/" + idPerson + "/current-health";
+		
+		WebTarget service = client.target(businessLogicServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		
+		System.out.println(response);
+		return response.readEntity(CurrentMeasureList.class);
+	}
+	
+	/**
+	 * This method checks if goal was achieved
+	 * @param check Boolean
+	 * @return String a motivation phrase
+	 */
+	private String getPhrase(Boolean check) {
+		if (check == true) {
+			return "Very good, you achieved a new goal!!! :)";
+		} else {
+			return getMotivationQuote();
+		}
+	}
+	
+	/**
+	 * This method calls getQuote and returns some quote
+	 * * Calls one time the SS
+	 * @return String
+	 */
+	private String getMotivationQuote() {
+		String path = "/adapter/quote";
+		
+		WebTarget service = client.target(storageServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+
+		String result = response.readEntity(String.class);
+		JSONObject obj = new JSONObject(result);
+		return obj.getJSONObject("result").getString("quote");
+	}
+	
+	/**
+	 * This method checks if the goal is achieved for the measure passed as parameter
+	 * Calls one time the BLS
+	 * @param idPerson Person
+	 * @param m Measure
+	 * @return Boolean true if a goal is achieved, false otherwise
+	 */
+	private Boolean checkGoal(int idPerson, Measure m) {
+		String path = "/person/" + idPerson + "/measure/" + m.getMid() + "/check";
+
+		WebTarget service = client.target(storageServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		
+		System.out.println(response);
+		return response.readEntity(Boolean.class);
+	}
+	
+	/**
+	 * This method creates a new measure object given a string,
+	 * corresponding to the name of a type measure, and the value of the new measure.
+	 * The new measure is sent to the Storage Service.
+	 * Calls one time the SS
+	 * @param idPerson
+	 * @param name
+	 * @param value
+	 * @return
+	 */
+	private Measure setMeasure(int idPerson, String name, int value){
+		//create new measure
+		Measure newMeasure = new Measure();
+		newMeasure.setName(name);
+		newMeasure.setValue(value);
+
+		//post new measure to StorageService
+		String path = "/person/" + idPerson + "/measure";
+		
+		WebTarget service = client.target(storageServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.post(Entity.entity(newMeasure, mediaType), Response.class);
+		System.out.println(response);
+		
+		//retrieve the id of the new saved measure
+		Integer idMeasure = response.readEntity(Integer.class);
+		
+		//retrieve the new measure from SS
+		Measure targetMeasure = getMeasureById(idPerson, idMeasure);
+		System.out.println(targetMeasure.toString());
+		
+		return targetMeasure;
+	}
+	
+	/**
+	 * This method calls getHistoryHealth and returns a measure with {idMeasure}
+	 * Calls one time the SS
+	 * @param idPerson Person
+	 * @param m Measure
+	 * @return Measure a measure
+	 */
+	public Measure getMeasureById(int idPerson, int idMeasure) {
+		System.out.println("getMeasureById: Reading Measures for idPerson "+ idPerson +"...");
+		
+		String path = "/person/" + idPerson + "/historyHealth";
+
+		WebTarget service = client.target(storageServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		
+		String result = response.readEntity(String.class);
+		JSONObject obj = new JSONObject(result);
+		
+		List<Measure> measureList = new ArrayList<Measure>();
+		JSONArray measureArr = (JSONArray)obj.getJSONArray("measure");
+		
+		for (int j = 0; j < measureArr.length(); j++) {
+			Measure m = new Measure(measureArr.getJSONObject(j).getInt("mid"), 
+									measureArr.getJSONObject(j).getString("name"), 
+									measureArr.getJSONObject(j).getInt("value"), 
+									measureArr.getJSONObject(j).getString("created"));
+			measureList.add(j, m);
+		}
+		
+		for(int i=0; i<measureList.size(); i++){
+			Measure m = measureList.get(i);
+			if(m.getMid() == idMeasure){
+				System.out.println("getMeasureById():\n" + m.toString());
+				return m;
+			}
+		}
+		return null;
+	}
+	
+	
+	
+
+	
+	
+	/*
+	
+	*//**
+	 * This method call readMotivationGoal from BLS and returns a motivation
+	 * goal phrase
+	 * 
+	 * @return String
+	 *//*
+	
+	private String getMotivationGoal(int idPerson, String measureName) {
+		String path = "/person/" + idPerson + "/motivation-goal/" + measureName;
+		ClientConfig clientConfig = new ClientConfig();
+
+		Client client = ClientBuilder.newClient(clientConfig);
+		WebTarget service = client.target(businessLogicServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+
+		String result = response.readEntity(String.class);
+		JSONObject obj = new JSONObject(result);
+		return obj.getJSONObject("motivationGoal").getJSONObject("goal")
+				.getString("motivation");
+	}
+	
+	*//**
 	 * PUT /person/{idPerson}/checkMeasure/{measureName} I Integration Logic
 	 * 
 	 * checkMeasure(idPerson, inputMeasureJSON, measureName) calls the following
@@ -86,7 +331,7 @@ public class PersonResource {
 	 * *getPicture() --> SS
 	 * 
 	 * @return
-	 */
+	 *//*
 	@PUT
 	@Path("{pid}/checkMeasure/{measureName}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -323,7 +568,7 @@ public class PersonResource {
 		return Response.ok(jsonPrettyPrintString).build();
 	}
 
-	/**
+	*//**
 	 * PUT /person/{idPerson}/checkGoal/{measureName} II Integration Logic
 	 *
 	 * checkGoal(idPerson, inputGoalJSON, measureName) calls the following
@@ -332,7 +577,7 @@ public class PersonResource {
 	 * *getPerson(idPerson) --> SS
 	 * 
 	 * @return
-	 */
+	 *//*
 	@PUT
 	@Path("{pid}/checkGoal/{measureName}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -452,130 +697,7 @@ public class PersonResource {
 		return Response.ok(jsonPrettyPrintString).build();
 	}
 
-	/**
-	 * POST /person/{idPerson}/insertNewMeasure/{measureName} III Integration
-	 * Logic
-	 * 
-	 * insertNewMeasure(idPerson, inputMeasureJSON, measureName) calls the
-	 * following methods: *readPersonDetails(idPerson) --> BLS
-	 * *createMeasure(idPerson, inputMeasureJSON) --> SS *getPerson(idPerson)
-	 * --> SS
-	 * 
-	 * @return
-	 */
-	@POST
-	@Path("{pid}/insertNewMeasure/{measureName}")
-	@Produces(MediaType.APPLICATION_JSON)
-	@Consumes(MediaType.APPLICATION_JSON)
-	public Response insertNewMeasure(@PathParam("pid") int idPerson,
-			String inputMeasureJSON,
-			@PathParam("measureName") String measureName) throws Exception {
-
-		System.out
-				.println("insertNewMeasure: Third integration logic which calls 3 services sequentially "
-						+ "from Storage and Business Logic Services in Process Centric Services...");
-
-		// GET PERSON/{IDPERSON} --> BLS
-		String path = "/person/" + idPerson;
-
-		String xmlBuild = "";
-
-		ClientConfig clientConfig = new ClientConfig();
-
-		Client client = ClientBuilder.newClient(clientConfig);
-		WebTarget service = client.target(businessLogicServiceURL);
-
-		Response response = service.path(path).request().accept(mediaType)
-				.get(Response.class);
-		if (response.getStatus() != 200) {
-			System.out
-					.println("Business Logic Service Error catch response.getStatus() != 200");
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity(externalErrorMessageBLS(response.toString()))
-					.build();
-		}
-
-		String result = response.readEntity(String.class);
-		JSONObject obj = new JSONObject(result);
-
-		JSONObject measureTarget = null;
-
-		JSONObject currentMeasureObj = (JSONObject) obj.get("currentHealth");
-		JSONArray measureArr = currentMeasureObj.getJSONArray("measure");
-		for (int i = 0; i < measureArr.length(); i++) {
-			if (measureArr.getJSONObject(i).getString("name")
-					.equals(measureName)) {
-				measureTarget = measureArr.getJSONObject(i);
-			}
-		}
-
-		if (measureTarget == null) {
-			// POST PERSON/{IDPERSON}/MEASURE --> SS
-			path = "/person/" + idPerson + "/measure";
-			service = client.target(storageServiceURL);
-
-			response = service
-					.path(path)
-					.request()
-					.accept(mediaType)
-					.post(Entity.entity(inputMeasureJSON, mediaType),
-							Response.class);
-			if (response.getStatus() != 201) {
-				System.out
-						.println("Storage Service Error catch response.getStatus() != 201");
-				return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-						.entity(externalErrorMessageSS(response.toString()))
-						.build();
-			}
-		}
-
-		// GET PERSON/{IDPERSON} --> SS
-		path = "/person/" + idPerson;
-
-		client = ClientBuilder.newClient(clientConfig);
-		service = client.target(storageServiceURL);
-
-		response = service.path(path).request().accept(mediaType)
-				.get(Response.class);
-		if (response.getStatus() != 200) {
-			System.out
-					.println("Storage Service Error catch response.getStatus() != 200");
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity(externalErrorMessageSS(response.toString()))
-					.build();
-		}
-
-		result = response.readEntity(String.class);
-
-		obj = new JSONObject(result);
-
-		currentMeasureObj = (JSONObject) obj.get("currentHealth");
-		measureArr = currentMeasureObj.getJSONArray("measure");
-		for (int i = 0; i < measureArr.length(); i++) {
-			if (measureArr.getJSONObject(i).getString("name")
-					.equals(measureName)) {
-				measureTarget = measureArr.getJSONObject(i);
-			}
-		}
-
-		System.out.println("Measure: " + measureTarget.get("name"));
-		System.out.println("Value: " + measureTarget.get("value"));
-
-		xmlBuild = "<measure>";
-		xmlBuild += "<id>" + measureTarget.get("mid") + "</id>";
-		xmlBuild += "<type>" + measureTarget.get("name") + "</type>";
-		xmlBuild += "<value>" + measureTarget.get("value") + "</value>";
-		xmlBuild += "</measure>";
-
-		JSONObject xmlJSONObj = XML.toJSONObject(xmlBuild);
-		String jsonPrettyPrintString = xmlJSONObj.toString(4);
-
-		System.out.println(jsonPrettyPrintString);
-
-		return Response.ok(jsonPrettyPrintString).build();
-	}
-
-	/**
+	*//**
 	 * POST /person/{idPerson}/insertNewGoal/{measureName} IV Integration Logic:
 	 * 
 	 * insertNewGoal(idPerson, inputGoalJSON, measureName) calls
@@ -583,7 +705,7 @@ public class PersonResource {
 	 * --> SS *getPerson(idPerson) --> SS
 	 * 
 	 * @return
-	 */
+	 *//*
 	@POST
 	@Path("{pid}/insertNewGoal/{measureName}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -698,7 +820,7 @@ public class PersonResource {
 
 	}
 
-	/**
+	*//**
 	 * GET /person/{idPerson}/verifyGoal/{measureName} V Integration Logic
 	 * 
 	 * verifyGoal(idPerson, measureName) method calls the following methods:
@@ -707,7 +829,7 @@ public class PersonResource {
 	 * BLS *getMeasureTypes() --> SS *getPicture() --> SS
 	 * 
 	 * @return
-	 */
+	 *//*
 	@GET
 	@Path("{pid}/verifyGoal/{measureName}")
 	@Consumes({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
@@ -746,15 +868,16 @@ public class PersonResource {
 
 		JSONObject goalTarget = null;
 		JSONObject measureTarget = null;
-		
+
 		JSONObject measureObj = (JSONObject) obj.get("currentHealth");
 		JSONArray measureArr = measureObj.getJSONArray("measure");
 		for (int i = 0; i < measureArr.length(); i++) {
-			if (measureArr.getJSONObject(i).getString("name").equals(measureName)) {
+			if (measureArr.getJSONObject(i).getString("name")
+					.equals(measureName)) {
 				measureTarget = measureArr.getJSONObject(i);
 			}
 		}
-		
+
 		JSONObject goalObj = (JSONObject) obj.get("goals");
 		JSONArray goalArr = goalObj.getJSONArray("goal");
 		for (int i = 0; i < goalArr.length(); i++) {
@@ -769,19 +892,19 @@ public class PersonResource {
 					+ "</goal>";
 
 		} else {
-			
+
 			String measureTargetName = measureName;
 			double measureTargetValue = 70;
-			
-			if(measureTarget != null){
+
+			if (measureTarget != null) {
 				measureTargetName = measureTarget.getString("name");
 				measureTargetValue = measureTarget.getDouble("value");
 			}
 
 			System.out.println("Measure:\n");
 			System.out.println("Name: " + measureTargetName);
-			System.out.println("Value: " + measureTargetValue);	
-			
+			System.out.println("Value: " + measureTargetValue);
+
 			System.out.println("Goal:\n");
 			System.out.println("ID: " + goalTarget.get("gid"));
 			System.out.println("Name: " + goalTarget.get("type"));
@@ -813,8 +936,8 @@ public class PersonResource {
 			// check if goal is achieved
 			switch (goalType) {
 			case "steps":
-				
-				//walking more than 5000 steps a day 
+
+				// walking more than 5000 steps a day
 				if (goalValueInt >= 5000) {
 
 					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
@@ -870,7 +993,7 @@ public class PersonResource {
 
 			case "water":
 
-				//drinking at least 3 litres of water a day
+				// drinking at least 3 litres of water a day
 				if (goalValueDouble >= 3.0) {
 
 					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
@@ -926,7 +1049,7 @@ public class PersonResource {
 
 			case "sleep":
 
-				//sleeping at least 8 hours a day
+				// sleeping at least 8 hours a day
 				if (goalValueDouble >= 8.0) {
 
 					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
@@ -979,20 +1102,20 @@ public class PersonResource {
 					}
 				}
 				break;
-				
+
 			case "weight":
-				
-				//losing 10% of weight in a month
+
+				// losing 10% of weight in a month
 				double newGoalValue = valoreScontato(measureTargetValue, 10);
 				System.out.println("Value losing 10%: " + newGoalValue);
-				
+
 				if (goalValueDouble <= newGoalValue) {
 
 					// III. PUT PERSON/{IDPERSON}/GOAL/{IDGOAL} --> SS
 					updatePath = "/person/" + idPerson + "/goal/"
 							+ goalTarget.getInt("gid");
-					System.out
-							.println("path_put_weight_achieved: " + updatePath);
+					System.out.println("path_put_weight_achieved: "
+							+ updatePath);
 
 					updateService = client.target(storageServiceURL);
 
@@ -1138,19 +1261,20 @@ public class PersonResource {
 		return Response.ok(jsonPrettyPrintString).build();
 	}
 
-	/**
+	*//**
 	 * This method return the value of current weight measure - 10%
+	 * 
 	 * @param valore
 	 * @param sconto
 	 * @return
-	 */
+	 *//*
 	public static double valoreScontato(double valore, double sconto) {
-		double out = valore * sconto / 100; 
-		out = valore - out; 
+		double out = valore * sconto / 100;
+		out = valore - out;
 		return out;
 	}
 
-	/**
+	*//**
 	 * GET /person/{idPerson}/comparisonInfo/{measureName} VI Integration Logic
 	 * 
 	 * ComparisonInfo(idPerson, measureName) method calls the following methods:
@@ -1161,7 +1285,7 @@ public class PersonResource {
 	 * @param measureName
 	 * @return
 	 * @throws Exception
-	 */
+	 *//*
 	@GET
 	@Path("{pid}/comparisonValue/{measureName}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -1308,66 +1432,13 @@ public class PersonResource {
 		return Response.ok(jsonPrettyPrintString).build();
 	}
 
-	/**
-	 * This method check if goal was achieved
-	 * 
-	 * @param check
-	 *            Boolean
-	 * @return String a motivation phrase
-	 */
-	private String getPhrase(Boolean check, int idPerson, String measureName) {
-		if (check == true) {
-			return "Very good, you achieved a new goal!!! :)";
-		} else {
-			return getMotivationGoal(idPerson, measureName);
-		}
-	}
+	
 
-	/**
-	 * This method call readMotivationGoal from BLS and returns a motivation
-	 * goal phrase
-	 * 
-	 * @return String
-	 */
-	private String getMotivationGoal(int idPerson, String measureName) {
-		String path = "/person/" + idPerson + "/motivation-goal/" + measureName;
-		ClientConfig clientConfig = new ClientConfig();
-
-		Client client = ClientBuilder.newClient(clientConfig);
-		WebTarget service = client.target(businessLogicServiceURL);
-		Response response = service.path(path).request().accept(mediaType)
-				.get(Response.class);
-
-		String result = response.readEntity(String.class);
-		JSONObject obj = new JSONObject(result);
-		return obj.getJSONObject("motivationGoal").getJSONObject("goal")
-				.getString("motivation");
-	}
-
-	/**
-	 * This method call getQuote from SS and returns a quote
-	 * 
-	 * @return String
-	 */
-	private String getMotivationQuote() {
-		String path = "/adapter/quote";
-		ClientConfig clientConfig = new ClientConfig();
-
-		Client client = ClientBuilder.newClient(clientConfig);
-		WebTarget service = client.target(storageServiceURL);
-		Response response = service.path(path).request().accept(mediaType)
-				.get(Response.class);
-
-		String result = response.readEntity(String.class);
-		JSONObject obj = new JSONObject(result);
-		return obj.getJSONObject("result").getString("quote");
-	}
-
-	/**
+	*//**
 	 * This method call measureTypes from SS and returns measureType
 	 * 
 	 * @return String
-	 */
+	 *//*
 	private String getMeasureType(String measureName) {
 		String path = "/measureTypes";
 		ClientConfig clientConfig = new ClientConfig();
@@ -1382,7 +1453,7 @@ public class PersonResource {
 		return obj.getJSONObject("measureTypes").getString(measureName);
 	}
 
-	/**
+	*//**
 	 * GET /person/{idPerson}/checkNewMeasure/{mid} VII Integration Logic
 	 * 
 	 * CheckNewMeasure(idPerson, idMeasure) method calls the following methods:
@@ -1392,7 +1463,7 @@ public class PersonResource {
 	 * @param idMeasure
 	 * @return
 	 * @throws Exception
-	 */
+	 *//*
 	@GET
 	@Path("{pid}/checkNewMeasure/{mid}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -1457,7 +1528,7 @@ public class PersonResource {
 		return Response.ok(jsonPrettyPrintString).build();
 	}
 
-	/**
+	*//**
 	 * GET /person/{idPerson}/checkNewGoal/{gid} VIII Integration Logic
 	 * 
 	 * CheckNewGoal(idPerson, idGoal) method calls the following methods:
@@ -1467,7 +1538,7 @@ public class PersonResource {
 	 * @param idMeasure
 	 * @return
 	 * @throws Exception
-	 */
+	 *//*
 	@GET
 	@Path("{pid}/checkNewGoal/{gid}")
 	@Produces(MediaType.APPLICATION_JSON)
@@ -1535,4 +1606,5 @@ public class PersonResource {
 
 		return Response.ok(jsonPrettyPrintString).build();
 	}
+	*/
 }
