@@ -10,15 +10,10 @@ public class Measure {
 	// Constructor measure class
 	public Measure(){}
 	
-	public Measure(String name, int value) {
-		this.name = name;
-		this.value = String.valueOf(value);	
-	}
-	
-	public Measure(int mid, String name, int value, String created) {
+	public Measure(int mid, String name, String value, String created) {
 		this.mid = mid;
 		this.name = name;
-		this.value = String.valueOf(value);
+		this.value = value;
 		this.created = created;
 	}
 	
@@ -42,8 +37,8 @@ public class Measure {
 		return value;
 	}
 
-	public void setValue(int value) {
-		this.value = String.valueOf(value);
+	public void setValue(String value) {
+		this.value = value;
 	}
 
 	public String getCreated() {
