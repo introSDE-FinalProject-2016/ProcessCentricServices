@@ -4,7 +4,7 @@ public class Measure {
 
 	private int mid;
 	private String name;
-	private int value;
+	private String value;
 	private String created;
 
 	// Constructor measure class
@@ -12,13 +12,13 @@ public class Measure {
 	
 	public Measure(String name, int value) {
 		this.name = name;
-		this.value = value;	
+		this.value = String.valueOf(value);	
 	}
 	
 	public Measure(int mid, String name, int value, String created) {
 		this.mid = mid;
 		this.name = name;
-		this.value = value;
+		this.value = String.valueOf(value);
 		this.created = created;
 	}
 	
@@ -38,12 +38,12 @@ public class Measure {
 		this.name = name;
 	}
 
-	public int getValue() {
+	public String getValue() {
 		return value;
 	}
 
 	public void setValue(int value) {
-		this.value = value;
+		this.value = String.valueOf(value);
 	}
 
 	public String getCreated() {
