@@ -232,7 +232,7 @@ public class PersonResource {
 		//create new measure
 		Measure newMeasure = new Measure();
 		newMeasure.setName(name);
-		newMeasure.setValue(value);
+		newMeasure.setValue(String.valueOf(value));
 
 		//post new measure to StorageService
 		String path = "/person/" + idPerson + "/measure";
@@ -287,7 +287,7 @@ public class PersonResource {
 			for (int j = 0; j < measureArr.length(); j++) {
 				Measure m = new Measure(measureArr.getJSONObject(j).getInt("mid"), 
 										measureArr.getJSONObject(j).getString("name"), 
-										measureArr.getJSONObject(j).getInt("value"), 
+										measureArr.getJSONObject(j).getString("value"), 
 										measureArr.getJSONObject(j).getString("created"));
 				measureList.add(j, m);
 			}
