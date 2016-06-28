@@ -8,7 +8,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 @XmlRootElement(name="Response")
 public class NewGoalResponseWrapper {
 	
-	@XmlElement(name="goals")
+	@XmlElement(name="goalsAchieved")
 	@JsonProperty("goals")
 	public GoalList goalList = new GoalList();
 	
