@@ -5,6 +5,7 @@ import introsde.finalproject.rest.processcentricservices.model.Measure;
 import introsde.finalproject.rest.processcentricservices.util.UrlInfo;
 import introsde.finalproject.rest.processcentricservices.wrapper.CurrentMeasureList;
 import introsde.finalproject.rest.processcentricservices.wrapper.GoalList;
+import introsde.finalproject.rest.processcentricservices.wrapper.HistoryMeasureList;
 import introsde.finalproject.rest.processcentricservices.wrapper.NewGoalResponseWrapper;
 import introsde.finalproject.rest.processcentricservices.wrapper.NewMeasureResponseWrapper;
 
@@ -475,4 +476,60 @@ public class PersonResource {
 		return result;
 	}
 
+	
+	/**
+	 * GET /person/{idPerson}/checkNewGoal/{idGoal}
+	 * 
+	 * @return an object of type Goal
+	 */
+	@GET
+	@Path("{pid}/checkNewGoal/{gid}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Goal checkNewGoal(@PathParam("pid") int idPerson, @PathParam("gid") int idGoal){
+		String path = "/person/" + idPerson + "/goal";
+
+		WebTarget service = client.target(businessLogicServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		
+		GoalList listGoals = response.readEntity(GoalList.class);
+		for(Goal g: listGoals.getGoalList()){
+			if(g.getGid() == idGoal){
+				System.out.println(g.toString());
+				return g;
+			}
+		}
+		
+		return null; 
+	}
+	
+	
+	/**
+	 * GET /person/{idPerson}/checkNewMeasure/{idMeasure}
+	 * 
+	 * @return an object of type Measure
+	 */
+	@GET
+	@Path("{pid}/checkNewMeasure/{mid}")
+	@Produces(MediaType.APPLICATION_JSON)
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Measure checkNewMeasure(@PathParam("pid") int idPerson, @PathParam("mid") int idMeasure){
+		String path = "/person/" + idPerson + "/history-health";
+
+		WebTarget service = client.target(businessLogicServiceURL);
+		Response response = service.path(path).request().accept(mediaType)
+				.get(Response.class);
+		
+		HistoryMeasureList listHistoryMeasures = response.readEntity(HistoryMeasureList.class);
+		for(Measure m: listHistoryMeasures.getHistoryMeasureList()){
+			if(m.getMid() == idMeasure){
+				System.out.println(m.toString());
+				return m;
+			}
+		}
+		
+		return null; 
+	}
+	
 }
